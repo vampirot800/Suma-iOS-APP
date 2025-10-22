@@ -6,87 +6,50 @@
 //
 
 import UIKit
+import PhotosUI
+import FirebaseAuth
+import FirebaseStorage
+internal import FirebaseFirestoreInternal
 
-final class ProfileViewController: ScrollingStackViewController {
+protocol EditProfileViewControllerDelegate: AnyObject {
+    func editProfileDidSave()
+}
+
+final class ProfileViewController: ScrollingStackViewController, EditProfileViewControllerDelegate {
+
+    private let header = ProfileHeaderView()
+    private let aboutTitle = UILabel()
+    private let aboutBody = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Profile"
+        buildUI()
+    }
 
-        // HEADER (avatar + name + role + edit button)
-        let header = makeProfileHeader()
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadProfile()
+    }
+
+    // MARK: - UI
+    private func buildUI() {
+        header.onEditTapped = { [weak self] in self?.presentEditProfile() }
+        header.onAvatarTapped = { [weak self] in self?.pickNewAvatar() }
         stackView.addArrangedSubview(header)
 
-        // ABOUT / DESCRIPTION
-        let about = makeSection(title: "About", text: "Short bio / description goes here.")
-        stackView.addArrangedSubview(about)
+        aboutTitle.text = "About"
+        aboutTitle.font = UIFont.preferredFont(forTextStyle: .headline)
+        aboutBody.text = "Short bio / description goes here."
+        aboutBody.numberOfLines = 0
+        aboutBody.font = UIFont.preferredFont(forTextStyle: .body)
 
-        // “Sumas” / achievements placeholder grid
-        let gridPlaceholder = makePlaceholder(height: 300, title: "Sumas / Achievements")
-        stackView.addArrangedSubview(gridPlaceholder)
-    }
+        let aboutStack = UIStackView(arrangedSubviews: [aboutTitle, aboutBody])
+        aboutStack.axis = .vertical
+        aboutStack.spacing = 8
+        stackView.addArrangedSubview(aboutStack)
 
-    private func makeProfileHeader() -> UIView {
-        let container = UIView()
-
-        let avatar = UIImageView(image: UIImage(systemName: "person.crop.circle.fill"))
-        avatar.contentMode = .scaleAspectFit
-        avatar.tintColor = .systemGray3
-        avatar.translatesAutoresizingMaskIntoConstraints = false
-        avatar.widthAnchor.constraint(equalToConstant: 84).isActive = true
-        avatar.heightAnchor.constraint(equalTo: avatar.widthAnchor).isActive = true
-        avatar.layer.cornerRadius = 42
-        avatar.clipsToBounds = true
-
-        let nameLabel = UILabel()
-        nameLabel.font = UIFont.preferredFont(forTextStyle: .title2).bold()
-        nameLabel.text = "Your Name"
-
-        let roleLabel = UILabel()
-        roleLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
-        roleLabel.textColor = .secondaryLabel
-        roleLabel.text = "media creator"
-
-        let textStack = UIStackView(arrangedSubviews: [nameLabel, roleLabel])
-        textStack.axis = .vertical
-        textStack.spacing = 2
-
-        let editButton = UIButton(type: .system)
-        editButton.setImage(UIImage(systemName: "pencil.circle.fill"), for: .normal)
-        editButton.setPreferredSymbolConfiguration(.init(pointSize: 24, weight: .regular), forImageIn: .normal)
-        editButton.tintColor = .systemBlue
-
-        let h = UIStackView(arrangedSubviews: [avatar, textStack, UIView(), editButton])
-        h.axis = .horizontal
-        h.alignment = .center
-        h.spacing = 12
-
-        h.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(h)
-        NSLayoutConstraint.activate([
-            h.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            h.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            h.topAnchor.constraint(equalTo: container.topAnchor),
-            h.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ])
-        return container
-    }
-
-
-    private func makeSection(title: String, text: String) -> UIView {
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = UIFont.preferredFont(forTextStyle: .headline)
-
-        let bodyLabel = UILabel()
-        bodyLabel.text = text
-        bodyLabel.numberOfLines = 0
-        bodyLabel.font = UIFont.preferredFont(forTextStyle: .body)
-
-        let v = UIStackView(arrangedSubviews: [titleLabel, bodyLabel])
-        v.axis = .vertical
-        v.spacing = 8
-        return v
+        stackView.addArrangedSubview(makePlaceholder(height: 300, title: "Sumas / Achievements"))
     }
 
     private func makePlaceholder(height: CGFloat, title: String) -> UIView {
@@ -108,9 +71,121 @@ final class ProfileViewController: ScrollingStackViewController {
         ])
         return box
     }
+
+    // MARK: - Data
+    private func loadProfile() {
+        Task {
+            do {
+                if let user = try await AuthService.shared.loadCurrentUser() {
+                    await MainActor.run {
+                        header.name = user.displayName
+                        header.role = user.role
+                        aboutBody.text = user.bio.isEmpty ? "No bio yet." : user.bio
+                    }
+                    if let urlString = user.photoURL, let url = URL(string: urlString) {
+                        await loadAvatar(from: url)
+                    } else {
+                        await MainActor.run { self.header.setAvatarImage(nil) }
+                    }
+                }
+            } catch { await MainActor.run { self.showError("Failed to load profile", error) } }
+        }
+    }
+
+    @MainActor
+    private func loadAvatar(from url: URL) async {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            self.header.setAvatarImage(UIImage(data: data))
+        } catch {
+            // Not fatal; just keep placeholder
+            self.header.setAvatarImage(nil)
+        }
+    }
+
+    // MARK: - Edit Profile
+    private func presentEditProfile() {
+        let edit = EditProfileViewController()
+        Task {
+            let user = try? await AuthService.shared.loadCurrentUser()
+            await MainActor.run {
+                edit.prefill = user
+                edit.delegate = self
+                let nav = UINavigationController(rootViewController: edit)
+                nav.modalPresentationStyle = .formSheet
+                self.present(nav, animated: true)
+            }
+        }
+    }
+
+    func editProfileDidSave() { loadProfile() }
+
+    // MARK: - Avatar picking & upload
+    private func pickNewAvatar() {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.selectionLimit = 1
+        config.filter = .images
+
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    private func uploadAvatar(_ image: UIImage) {
+        guard let uid = AuthService.shared.currentUserId else { return }
+
+        // Compress to JPEG (you can tune quality)
+        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+
+        let fs = FirebaseService.shared
+        let avatarRef = fs.avatarsRoot.child("\(uid).jpg")
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+
+        // Simple progress HUD replacement: disable user interaction briefly
+        view.isUserInteractionEnabled = false
+
+        Task {
+            do {
+                _ = try await avatarRef.putDataAsync(data, metadata: metadata)
+                let url = try await avatarRef.downloadURL()
+
+                // Save downloadURL on user doc
+                try await fs.users.document(uid).setData(["photoURL": url.absoluteString], merge: true)
+
+                // Update UI
+                await MainActor.run {
+                    self.view.isUserInteractionEnabled = true
+                    self.header.setAvatarImage(image)
+                }
+            } catch {
+                await MainActor.run {
+                    self.view.isUserInteractionEnabled = true
+                    self.showError("Upload failed", error)
+                }
+            }
+        }
+    }
+
+    // MARK: - Helpers
+    private func showError(_ title: String, _ error: Error) {
+        let ac = UIAlertController(title: title, message: error.localizedDescription, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default))
+        present(ac, animated: true)
+    }
 }
 
-// Small convenience so labels can be bolded easily
-private extension UIFont {
-    func bold() -> UIFont { UIFont(descriptor: fontDescriptor.withSymbolicTraits(.traitBold)!, size: pointSize) }
+// MARK: - PHPicker delegate
+extension ProfileViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        dismiss(animated: true)
+
+        guard let provider = results.first?.itemProvider, provider.canLoadObject(ofClass: UIImage.self) else { return }
+
+        provider.loadObject(ofClass: UIImage.self) { object, _ in
+            guard let image = object as? UIImage else { return }
+            // Optionally crop to square here before upload
+            self.uploadAvatar(image)
+        }
+    }
 }

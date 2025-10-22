@@ -38,6 +38,7 @@ struct Message: Codable, Identifiable {
     var status: String
     var createdat: Date
     var type: String
+    
 }
 
 // SUMAS (achievements) – top level docs keyed like "suma.user1"

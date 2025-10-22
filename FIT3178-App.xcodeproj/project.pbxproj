@@ -14,11 +14,18 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		55035DAB2EA936380019CA28 /* FIT3178-App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FIT3178-App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		551A038F2EA8C19100BA3F89 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		5586497F2E8411B20037C721 /* FIT3178-App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "FIT3178-App.app"; path = "/Users/ramirofloresv/Desktop/iOS APP DEV /MobileApp/build/Debug-iphoneos/FIT3178-App.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		55035DF32EA985AF0019CA28 /* Exceptions for "Scenes" folder in "FIT3178-App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Inbox/Untitled.swift,
+			);
+			target = 5586497E2E8411B10037C721 /* FIT3178-App */;
+		};
 		558649912E8411B30037C721 /* Exceptions for "FIT3178-App" folder in "FIT3178-App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -31,6 +38,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		551A035C2EA00AAC00BA3F89 /* Scenes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				55035DF32EA985AF0019CA28 /* Exceptions for "Scenes" folder in "FIT3178-App" target */,
+			);
 			path = Scenes;
 			sourceTree = "<group>";
 		};
@@ -76,6 +86,7 @@
 				551A03662EA00B9900BA3F89 /* DesignSystem */,
 				551A038F2EA8C19100BA3F89 /* GoogleService-Info.plist */,
 				551A03772EA7E9DF00BA3F89 /* Firebase */,
+				55035DAB2EA936380019CA28 /* FIT3178-App.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -107,7 +118,7 @@
 				551A03732EA7C8EF00BA3F89 /* FirebaseStorage */,
 			);
 			productName = "FIT3178-App";
-			productReference = 5586497F2E8411B20037C721 /* FIT3178-App.app */;
+			productReference = 55035DAB2EA936380019CA28 /* FIT3178-App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

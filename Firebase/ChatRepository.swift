@@ -9,59 +9,81 @@ import Foundation
 import FirebaseFirestore
 
 final class ChatRepository {
+    static let shared = ChatRepository()
+    private init() {}
+
     private let fs = FirebaseService.shared
 
-    // Get chats where current user participates
-    func observeMyChats(uid: String,
+    // Create (or find) a 1:1 thread for two users
+    func ensureDirectThread(with otherUid: String, currentUid: String) async throws -> String {
+        // Look for an existing chat with exactly these two participants
+        let snap = try await fs.chats
+            .whereField("isgroupchat", isEqualTo: false)
+            .whereField("participants", arrayContains: currentUid)
+            .getDocuments()
+
+        if let doc = snap.documents.first(where: { ($0["participants"] as? [String])?.sorted() == [currentUid, otherUid].sorted() }) {
+            return doc.documentID
+        }
+
+        // Create new
+        var data: [String: Any] = [
+            "participants": [currentUid, otherUid],
+            "isgroupchat": false,
+            "lastmessage": "",
+            "lastmessagetime": FieldValue.serverTimestamp()
+        ]
+        // Optional: prefill participantphotos as an empty map
+        data["participantphotos"] = [String:String]()
+        let ref = try await fs.chats.addDocument(data: data)
+        return ref.documentID
+    }
+
+    // Observe the current user's threads (ordered by lastmessagetime desc)
+    func observeThreads(for uid: String,
                         onChange: @escaping ([ChatThread]) -> Void) -> ListenerRegistration {
-        return fs.chats.whereField("participants", arrayContains: uid)
-            .order(by: "lastMessageTime", descending: true)
+        fs.chats
+            .whereField("participants", arrayContains: uid)
+            .order(by: "lastmessagetime", descending: true)
             .addSnapshotListener { qs, _ in
-                let items = qs?.documents.compactMap { try? $0.data(as: ChatThread.self) } ?? []
-                onChange(items)
+                let threads: [ChatThread] = qs?.documents.compactMap { try? $0.data(as: ChatThread.self) } ?? []
+                onChange(threads)
             }
     }
 
-    // Messages subcollection listener
+    // Observe messages within a thread
     func observeMessages(chatId: String,
                          onChange: @escaping ([Message]) -> Void) -> ListenerRegistration {
-        fs.chats.document(chatId).collection("messages")
-            .order(by: "timestamp")
+        fs.chats.document(chatId)
+            .collection("messages")
+            .order(by: "createdat")
             .addSnapshotListener { qs, _ in
-                let msgs = qs?.documents.compactMap { try? $0.data(as: Message.self) } ?? []
+                let msgs: [Message] = qs?.documents.compactMap { try? $0.data(as: Message.self) } ?? []
                 onChange(msgs)
             }
     }
 
-    // Send a message; also updates chat summary
-    func sendMessage(chatId: String, from uid: String, text: String) async throws {
-        let msg = Message(id: nil, senderID: uid, text: text, status: "sent", createdat: Date(), type: "text")
-        try fs.chats.document(chatId).collection("messages").addDocument(from: msg)
+    // Send a text message
+    func sendText(chatId: String, text: String, from uid: String) async throws {
+        let msg = Message(id: nil,
+                          senderID: uid,
+                          text: text,
+                          status: "sent",
+                          createdat: Date(),
+                          type: "text")
 
-        try await fs.chats.document(chatId).setData([
-            "lastMessage": text,
-            "lastMessageTime": FieldValue.serverTimestamp()
+        let ref = fs.chats.document(chatId)
+        _ = try await ref.collection("messages").addDocument(data: [
+            "senderID": msg.senderID,
+            "text": msg.text,
+            "status": msg.status,
+            "createdat": Timestamp(date: msg.createdat),
+            "type": msg.type
+        ])
+
+        try await ref.setData([
+            "lastmessage": msg.text,
+            "lastmessagetime": FieldValue.serverTimestamp()
         ], merge: true)
-    }
-
-    // Create (or reuse) a 1:1 chat for two uids
-    func ensureDirectChat(between a: String, and b: String) async throws -> String {
-        // Simple: search a chat with both participants
-        let qs = try await fs.chats
-            .whereField("participants", arrayContains: a).getDocuments()
-
-        if let existing = qs.documents.first(where: {
-            let arr = $0["participants"] as? [String] ?? []
-            return Set(arr) == Set([a,b])
-        })?.documentID {
-            return existing
-        }
-
-        let new = ChatThread(id: nil, participants: [a, b],
-                             lastmessage: nil, lastmessagetime: nil,
-                             participantphotos: nil, isgroupchat: false)
-
-        let ref = try fs.chats.addDocument(from: new)
-        return ref.documentID
     }
 }

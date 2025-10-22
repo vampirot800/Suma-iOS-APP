@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseStorage
 
 final class FirebaseService {
     static let shared = FirebaseService()
@@ -20,4 +21,7 @@ final class FirebaseService {
     var users: CollectionReference { db.collection("users") }
     var chats: CollectionReference { db.collection("chats") }
     var sumas: CollectionReference { db.collection("sumas") }
+    
+    let storage = Storage.storage()
+    var avatarsRoot: StorageReference { storage.reference().child("avatars") }
 }
