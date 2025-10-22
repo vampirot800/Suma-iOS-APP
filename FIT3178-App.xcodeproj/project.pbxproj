@@ -19,13 +19,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		55035DF32EA985AF0019CA28 /* Exceptions for "Scenes" folder in "FIT3178-App" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Inbox/Untitled.swift,
-			);
-			target = 5586497E2E8411B10037C721 /* FIT3178-App */;
-		};
 		558649912E8411B30037C721 /* Exceptions for "FIT3178-App" folder in "FIT3178-App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -38,9 +31,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		551A035C2EA00AAC00BA3F89 /* Scenes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				55035DF32EA985AF0019CA28 /* Exceptions for "Scenes" folder in "FIT3178-App" target */,
-			);
 			path = Scenes;
 			sourceTree = "<group>";
 		};
