@@ -13,16 +13,17 @@ final class SumaRepository {
 
     func observeMySumas(uid: String,
                         onChange: @escaping ([Suma]) -> Void) -> ListenerRegistration {
-        fs.sumas.whereField("ownerId", isEqualTo: uid)
+        fs.sumas
+            .whereField("ownerId", isEqualTo: uid)
             .order(by: "date", descending: true)
             .addSnapshotListener { qs, _ in
-                let items = qs?.documents.compactMap { try? $0.data(as: Suma.self) } ?? []
+                let items = qs?.documents.compactMap { Suma(doc: $0) } ?? []
                 onChange(items)
             }
     }
 
     func addSuma(_ s: Suma) async throws {
-        try fs.sumas.addDocument(from: s)
+        try await fs.sumas.addDocument(data: s.asData)
     }
 
     func deleteSuma(id: String) async throws {

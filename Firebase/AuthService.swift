@@ -16,10 +16,9 @@ final class AuthService {
     private init() {}
 
     private let fs = FirebaseService.shared
-
     var currentUserId: String? { fs.auth.currentUser?.uid }
 
-    // MARK: - Sign Up (Email/Password)
+    // MARK: - Sign Up
     func signUp(email: String,
                 password: String,
                 displayName: String,
@@ -29,7 +28,6 @@ final class AuthService {
         let result = try await fs.auth.createUser(withEmail: email, password: password)
         let uid = result.user.uid
 
-        // (Optional) also set the FirebaseAuth displayName so it's available in Auth
         let change = result.user.createProfileChangeRequest()
         change.displayName = displayName
         try await change.commitChanges()
@@ -37,7 +35,7 @@ final class AuthService {
         let appUser = AppUser(
             id: uid,
             displayName: displayName,
-            username: email, // or derive from displayName if your model expects a separate username
+            username: email,
             role: role,
             bio: bio,
             photoURL: nil,
@@ -45,15 +43,14 @@ final class AuthService {
             searchable: tags
         )
 
-        try fs.users.document(uid).setData(from: appUser, merge: true)
+        try await fs.users.document(uid).setData(appUser.asData, merge: true)
     }
 
-    // MARK: - Sign In (Email/Password)
+    // MARK: - Sign In
     func signIn(email: String, password: String) async throws {
         _ = try await fs.auth.signIn(withEmail: email, password: password)
     }
 
-    /// Convenience: sign in and ensure there is a Firestore user doc (first login support)
     func signInAndEnsureUserDoc(email: String,
                                 password: String,
                                 displayNameFallback: String = "New User") async throws {
@@ -61,15 +58,13 @@ final class AuthService {
         try await ensureUserDoc(displayNameFallback: displayNameFallback)
     }
 
-    func signOut() throws {
-        try fs.auth.signOut()
-    }
+    func signOut() throws { try fs.auth.signOut() }
 
     // MARK: - Profile helpers
     func loadCurrentUser() async throws -> AppUser? {
         guard let uid = currentUserId else { return nil }
         let snap = try await fs.users.document(uid).getDocument()
-        return try snap.data(as: AppUser.self)
+        return AppUser(doc: snap)
     }
 
     func ensureUserDoc(displayNameFallback: String = "New User") async throws {
@@ -86,8 +81,7 @@ final class AuthService {
                 tags: [],
                 searchable: []
             )
-            try ref.setData(from: user, merge: true)
+            try await ref.setData(user.asData, merge: true)
         }
     }
 }
-
