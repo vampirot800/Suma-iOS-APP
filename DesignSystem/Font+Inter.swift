@@ -5,8 +5,6 @@
 //  Created by Ramiro Flores Villarreal on 16/10/25.
 //
 
-import Foundation
-
 import UIKit
 
 extension UIFont {
@@ -19,7 +17,13 @@ extension UIFont {
         case .medium:   name = "Inter-Medium"
         case .semibold: name = "Inter-SemiBold"
         }
-        return UIFont(name: name, size: size) ?? .systemFont(ofSize: size)
+        return UIFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: {
+            switch weight {
+            case .regular: return .regular
+            case .medium:  return .medium
+            case .semibold:return .semibold
+            }
+        }())
     }
 }
 
@@ -35,5 +39,15 @@ extension Theme.Font {
     }
     static func caption() -> UIFont {
         UIFontMetrics(forTextStyle: .caption1).scaledFont(for: .inter(.regular, size: 12))
+    }
+    // New: navigation & CTA defaults
+    static func navTitle() -> UIFont {
+        UIFontMetrics(forTextStyle: .headline).scaledFont(for: .inter(.semibold, size: 17))
+    }
+    static func navLargeTitle() -> UIFont {
+        UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: .inter(.semibold, size: 34))
+    }
+    static func button() -> UIFont {
+        UIFontMetrics(forTextStyle: .headline).scaledFont(for: .inter(.semibold, size: 17))
     }
 }

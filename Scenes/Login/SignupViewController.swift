@@ -5,7 +5,6 @@
 //  Created by Ramiro Flores Villarreal on 22/10/25.
 //
 
-
 import UIKit
 import FirebaseAuth
 
@@ -21,8 +20,37 @@ final class SignupViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Create Account"
+
+        // Text input types
         emailField.keyboardType = .emailAddress
+        emailField.textContentType = .username
+        emailField.autocapitalizationType = .none
+        emailField.autocorrectionType = .no
+
         passwordField.isSecureTextEntry = true
+        passwordField.textContentType = .newPassword
+        passwordField.autocapitalizationType = .none
+        passwordField.autocorrectionType = .no
+
+        firstNameField.autocorrectionType = .no
+        firstNameField.textContentType = .name
+
+        // Match Login VC field style
+        [firstNameField, emailField, passwordField].forEach {
+            styleTextField($0)
+        }
+
+        // Optional: pill button like your design
+        createButton.backgroundColor = Theme.primary
+        createButton.setTitleColor(.white, for: .normal)
+        createButton.titleLabel?.font = Theme.Font.headline()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Make the button a pill after it has a size
+        createButton.layer.cornerRadius = createButton.bounds.height / 2
+        createButton.layer.masksToBounds = true
     }
 
     // MARK: - Actions
@@ -77,7 +105,6 @@ final class SignupViewController: UIViewController {
         window.makeKeyAndVisible()
     }
 
-
     // MARK: - UI helpers
     private func alert(title: String, message: String) {
         let a = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -87,22 +114,36 @@ final class SignupViewController: UIViewController {
 
     private func prettyAuthError(_ error: Error) -> String {
         let ns = error as NSError
-        if ns.domain == AuthErrorDomain {
-            if let authCode = AuthErrorCode(rawValue: ns.code) {
-                switch authCode {
-                case .emailAlreadyInUse:
-                    return "An account already exists for that email."
-                case .weakPassword:
-                    return "Password is too weak. Try a longer one."
-                case .invalidEmail:
-                    return "That email address looks invalid."
-                case .networkError:
-                    return "Network error. Please try again."
-                default:
-                    return ns.localizedDescription
-                }
+        if ns.domain == AuthErrorDomain, let code = AuthErrorCode(rawValue: ns.code) {
+            switch code {
+            case .emailAlreadyInUse: return "An account already exists for that email."
+            case .weakPassword:      return "Password is too weak. Try a longer one."
+            case .invalidEmail:      return "That email address looks invalid."
+            case .networkError:      return "Network error. Please try again."
+            default:                 return ns.localizedDescription
             }
         }
         return ns.localizedDescription
+    }
+
+    // Same look as Login VC
+    private func styleTextField(_ tf: UITextField?) {
+        guard let tf else { return }
+        tf.textColor = Theme.textPrimary
+        tf.backgroundColor = Theme.surface.withAlphaComponent(0.18)
+        tf.layer.cornerRadius = 12
+        tf.layer.masksToBounds = true
+
+        // Left padding
+        let pad = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.leftView = pad
+        tf.leftViewMode = .always
+
+        // Placeholder tint
+        let placeholder = tf.placeholder ?? ""
+        tf.attributedPlaceholder = NSAttributedString(
+            string: placeholder,
+            attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
+        )
     }
 }

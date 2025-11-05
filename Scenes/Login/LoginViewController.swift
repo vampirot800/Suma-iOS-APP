@@ -19,12 +19,18 @@ final class LoginViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = Theme.background
+
         emailField.keyboardType = .emailAddress
         emailField.textContentType = .username
         passwordField.isSecureTextEntry = true
         passwordField.textContentType = .password
+
+        styleTextField(emailField, placeholder: "Email")
+        styleTextField(passwordField, placeholder: "Password")
     }
 
+    
     // MARK: - Actions
     @IBAction func signInTapped(_ sender: UIButton) {
         let email = (emailField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -51,6 +57,7 @@ final class LoginViewController: UIViewController {
             }
         }
     }
+    
 
     // MARK: - Navigation helper
     private func swapToMainRoot() {
@@ -88,5 +95,35 @@ final class LoginViewController: UIViewController {
         }
         return ns.localizedDescription
     }
+    
+    private func styleTextField(_ tf: UITextField, placeholder: String) {
+        tf.borderStyle = .none
+        tf.textColor = Theme.textPrimary
+        tf.attributedPlaceholder = NSAttributedString(
+            string: placeholder,
+            attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
+        )
+        tf.backgroundColor = UIColor.white.withAlphaComponent(0.92) // matches your figma “pill”
+        tf.layer.cornerRadius = 16        // <- roundness here
+        tf.layer.masksToBounds = true
+        tf.layer.borderWidth = 0
+
+        // left padding
+        tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        tf.leftViewMode = .always
+    }
+    
+    //Delete top navigation item bar
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: true)
+    }
+
+
 }
 
