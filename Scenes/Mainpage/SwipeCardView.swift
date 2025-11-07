@@ -2,68 +2,83 @@
 //  SwipeCardView.swift
 //  FIT3178-App
 //
-//  Created by Ramiro Flores Villarreal on 23/10/25.
+//  - Bigger corner radius
+//  - Softer, larger shadow
+//  - 16:9 image
+//  - Rounded "chip" tags
 //
 
 import UIKit
 
-// Simple view model your VC feeds into the card
-struct CandidateVM {
-    let name: String
-    let subtitle: String      // e.g. “Offers: travel • food” or role
-    let tags: [String]        // full tag list to render as chips
-    let image: UIImage?       // optional photo (placeholder OK)
+// View model VC feeds into the card
+public struct CandidateVM {
+    public let name: String
+    public let subtitle: String      // e.g. “Offers: travel • food” or role
+    public let tags: [String]        // tag chips
+    public let image: UIImage?       // optional photo
+    public init(name: String, subtitle: String, tags: [String], image: UIImage?) {
+        self.name = name; self.subtitle = subtitle; self.tags = tags; self.image = image
+    }
 }
 
-final class SwipeCardView: UIView {
+public final class SwipeCardView: UIView {
 
-    // MARK: - Subviews
-    private let imageView = UIImageView()
-    private let nameLabel = UILabel()
-    private let subtitleLabel = UILabel()
-    private let tagsStack = UIStackView()
-    private let contentStack = UIStackView()
-
-    // Layout constants so you can tweak quickly
-    struct Layout {
-        static let corner: CGFloat = 16
-        static let shadow: Float = 0.18
-        static let vPad: CGFloat = 14
+    // MARK: - Layout constants
+    private struct Layout {
+        static let corner: CGFloat = 20
+        static let shadowOpacity: Float = 0.16
+        static let shadowRadius: CGFloat = 12
+        static let shadowOffset = CGSize(width: 0, height: 8)
         static let hPad: CGFloat = 16
-        static let imageTop: CGFloat = 16
-        static let imageSide: CGFloat = 24
+        static let vPad: CGFloat = 14
+        static let imageCorner: CGFloat = 12
         static let titleSpacing: CGFloat = 6
-        static let chipSpacing: CGFloat = 8
         static let chipsTop: CGFloat = 10
+        static let chipSpacing: CGFloat = 8
         static let bottomPadding: CGFloat = 16
     }
 
-    init(vm: CandidateVM) {
-        super.init(frame: .zero)
-        buildUI()
+    // MARK: - Subviews
+    private let container = UIStackView()
+    private let imageView = UIImageView()
+    private let contentStack = UIStackView()
+    private let nameLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let tagsStack = UIStackView()
+
+    // MARK: - Init
+    public convenience init(vm: CandidateVM) {
+        self.init(frame: .zero)
         apply(vm: vm)
     }
 
-    required init?(coder: NSCoder) {
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        buildUI()
+    }
+
+    public required init?(coder: NSCoder) {
         super.init(coder: coder)
         buildUI()
     }
 
+    // MARK: - Build
     private func buildUI() {
-        backgroundColor = .secondarySystemBackground
+        backgroundColor = .systemBackground
         layer.cornerRadius = Layout.corner
         layer.masksToBounds = false
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = Layout.shadow
-        layer.shadowRadius = 10
-        layer.shadowOffset = CGSize(width: 0, height: 6)
+        layer.shadowOpacity = Layout.shadowOpacity
+        layer.shadowRadius = Layout.shadowRadius
+        layer.shadowOffset = Layout.shadowOffset
 
         // Image
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.25)
-        imageView.layer.cornerRadius = 12
-        imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 2/3).isActive = true
+        imageView.layer.cornerRadius = Layout.imageCorner
+        imageView.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.20)
+        // 16:9 aspect
+        imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 9.0/16.0).isActive = true
 
         // Labels
         nameLabel.font = .preferredFont(forTextStyle: .title2).withWeight(.semibold)
@@ -74,31 +89,28 @@ final class SwipeCardView: UIView {
         subtitleLabel.textColor = .secondaryLabel
         subtitleLabel.numberOfLines = 2
 
-        // Tags
-        tagsStack.axis = .horizontal
-        tagsStack.spacing = Layout.chipSpacing
-        tagsStack.alignment = .leading
-        tagsStack.distribution = .fillProportionally
-
-        // Content stack
+        // Content stack (title + subtitle + chips wrapper)
         contentStack.axis = .vertical
+        contentStack.alignment = .fill
         contentStack.spacing = Layout.titleSpacing
 
-        // Assemble
-        let container = UIStackView(arrangedSubviews: [imageView, contentStack])
+        // Tags
+        tagsStack.axis = .horizontal
+        tagsStack.alignment = .leading
+        tagsStack.distribution = .fillProportionally
+        tagsStack.spacing = Layout.chipSpacing
+
+        // Container
         container.axis = .vertical
+        container.alignment = .fill
         container.spacing = Layout.vPad
         container.translatesAutoresizingMaskIntoConstraints = false
 
+        // Assemble
         addSubview(container)
-        NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Layout.hPad),
-            container.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Layout.hPad),
-            container.topAnchor.constraint(equalTo: topAnchor, constant: Layout.imageTop),
-            container.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -Layout.bottomPadding)
-        ])
+        container.addArrangedSubview(imageView)
+        container.addArrangedSubview(contentStack)
 
-        // Content
         contentStack.addArrangedSubview(nameLabel)
         contentStack.addArrangedSubview(subtitleLabel)
 
@@ -113,40 +125,56 @@ final class SwipeCardView: UIView {
             tagsStack.bottomAnchor.constraint(equalTo: tagsWrapper.bottomAnchor)
         ])
         contentStack.addArrangedSubview(tagsWrapper)
+
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Layout.hPad),
+            container.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Layout.hPad),
+            container.topAnchor.constraint(equalTo: topAnchor, constant: Layout.vPad),
+            container.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -Layout.bottomPadding)
+        ])
     }
 
-    func apply(vm: CandidateVM) {
-        imageView.image = vm.image ?? UIImage(systemName: "photo")?
-            .withRenderingMode(.alwaysTemplate)
+    // MARK: - Apply content
+    public func apply(vm: CandidateVM) {
+        imageView.image = vm.image ?? UIImage(systemName: "photo")?.withRenderingMode(.alwaysTemplate)
         imageView.tintColor = UIColor.systemGreen
 
         nameLabel.text = vm.name
         subtitleLabel.text = vm.subtitle
 
-        // Tags → chips
+        // Rebuild tags
         tagsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for tag in vm.tags.prefix(6) { // cap to keep it tidy
-            tagsStack.addArrangedSubview(chip(tag))
+        for tag in vm.tags {
+            let chip = ChipLabel(text: tag)
+            tagsStack.addArrangedSubview(chip)
         }
+
+        setNeedsLayout()
+        layoutIfNeeded()
     }
 
-    private func chip(_ text: String) -> UIView {
-        let label = PaddingLabel(insets: .init(top: 4, left: 10, bottom: 4, right: 10))
-        label.text = text
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .label
-        label.backgroundColor = .tertiarySystemFill
-        label.layer.cornerRadius = 12
-        label.clipsToBounds = true
-        return label
+    // Perf: stable shadow path
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: Layout.corner).cgPath
     }
 }
 
-// Helpers
-private final class PaddingLabel: UILabel {
-    private let insets: UIEdgeInsets
-    init(insets: UIEdgeInsets) { self.insets = insets; super.init(frame: .zero) }
-    required init?(coder: NSCoder) { self.insets = .zero; super.init(coder: coder) }
+// MARK: - Chip Label (rounded tag)
+private final class ChipLabel: UILabel {
+    private let insets = UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10)
+    init(text: String) {
+        super.init(frame: .zero)
+        self.text = text
+        font = .preferredFont(forTextStyle: .footnote)
+        textColor = .label
+        backgroundColor = .tertiarySystemFill
+        layer.cornerRadius = 12
+        layer.masksToBounds = true
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .horizontal)
+    }
+    required init?(coder: NSCoder) { super.init(coder: coder) }
     override func drawText(in rect: CGRect) { super.drawText(in: rect.inset(by: insets)) }
     override var intrinsicContentSize: CGSize {
         let base = super.intrinsicContentSize
