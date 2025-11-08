@@ -67,6 +67,33 @@ final class ChatRepository {
                 onChange(msgs)
             }
     }
+    
+    // MARK: Started 1:1 threads (for Inbox)
+    func observeStartedThreads(for uid: String,
+                               handler: @escaping ([ChatThread]) -> Void) -> ListenerRegistration {
+
+        let db = Firestore.firestore()
+        let epoch = Timestamp(date: Date(timeIntervalSince1970: 1)) // tiny > 0
+
+        // Base: chats that include me
+        var query: Query = db.collection("chats")
+            .whereField("participants", arrayContains: uid)
+            .whereField("isgroupchat", isEqualTo: false)
+
+        // We want “started” chats:
+        // ( lastmessage != "" ) OR ( lastmessagetime > epoch )
+        // Firestore doesn’t allow OR + orderBy in one pass without composite indexes,
+        // so we’ll do the OR in memory after listening.
+        query = query.order(by: "lastmessagetime", descending: true)
+
+        return query.addSnapshotListener { snap, _ in
+            let list = snap?.documents.compactMap { ChatThread(doc: $0) } ?? []
+            let started = list.filter { ($0.lastmessage?.isEmpty == false) || ($0.lastmessagetime != nil) }
+            handler(started)
+        }
+    }
+
+
 
     // Send message
     func sendText(chatId: String, text: String) async throws {

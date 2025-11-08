@@ -20,9 +20,9 @@ final class EditProfileViewController: UIViewController {
 
     // MARK: - Theme (colors pulled from Assets; keep your palette)
     struct AppColors {
-        static let surface = UIColor(named: "Surface") ?? UIColor.systemGroupedBackground
+        static let surface = UIColor(named: "Background2") ?? UIColor.systemGroupedBackground
         static let header  = UIColor(named: "Header") ?? UIColor.systemGreen
-        static let fieldBG = UIColor(named: "FieldBG") ?? UIColor.secondarySystemGroupedBackground
+        static let fieldBG = UIColor(named: "BrandSecondary") ?? UIColor.secondarySystemGroupedBackground
         static let text    = UIColor.label
         static let pill    = UIColor.white
     }

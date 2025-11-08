@@ -66,11 +66,6 @@ final class ProfileViewController: UIViewController {
 
         if let photoURL, let url = URL(string: photoURL) {
             await loadAvatar(from: url)
-        } else {
-            await MainActor.run {
-                self.avatarImageView.image = UIImage(systemName: "person.circle.fill")
-                self.avatarImageView.tintColor = .systemGray3
-            }
         }
     }
 
