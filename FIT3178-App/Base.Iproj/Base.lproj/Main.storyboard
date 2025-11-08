@@ -399,6 +399,7 @@
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="oM6-5C-wK2">
                                 <rect key="frame" x="24" y="171" width="345" height="453"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <color key="separatorColor" name="Background2"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="default" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="ChatCardCell" id="dJt-ND-91E" customClass="ChatCardCell" customModule="FIT3178_App" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="50" width="345" height="52"/>
@@ -423,7 +424,7 @@
                                                             <nil key="highlightedColor"/>
                                                         </label>
                                                     </subviews>
-                                                    <color key="backgroundColor" name="Surface"/>
+                                                    <color key="backgroundColor" name="BrandPrimary"/>
                                                     <constraints>
                                                         <constraint firstAttribute="trailing" secondItem="4i4-S3-B2c" secondAttribute="trailing" constant="8" id="1P7-mw-CVY"/>
                                                         <constraint firstItem="4i4-S3-B2c" firstAttribute="leading" secondItem="1F8-7b-BEj" secondAttribute="leading" constant="8" id="MPj-hL-gnC"/>
@@ -440,6 +441,7 @@
                                                 </view>
                                             </subviews>
                                         </tableViewCellContentView>
+                                        <color key="backgroundColor" name="Background2"/>
                                         <constraints>
                                             <constraint firstAttribute="bottom" secondItem="1F8-7b-BEj" secondAttribute="bottom" constant="8" id="0Ui-ye-lKH"/>
                                             <constraint firstItem="1F8-7b-BEj" firstAttribute="leading" secondItem="dJt-ND-91E" secondAttribute="leading" constant="16" id="6gS-1O-fIx"/>
