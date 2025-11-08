@@ -41,9 +41,9 @@ final class SignupViewController: UIViewController {
         }
 
         // Optional: pill button like your design
-        createButton.backgroundColor = Theme.primary
+        // createButton.backgroundColor = Theme.primary
         createButton.setTitleColor(.white, for: .normal)
-        createButton.titleLabel?.font = Theme.Font.headline()
+        // createButton.titleLabel?.font = Theme.Font.headline()
     }
 
     override func viewDidLayoutSubviews() {
@@ -129,8 +129,8 @@ final class SignupViewController: UIViewController {
     // Same look as Login VC
     private func styleTextField(_ tf: UITextField?) {
         guard let tf else { return }
-        tf.textColor = Theme.textPrimary
-        tf.backgroundColor = Theme.surface.withAlphaComponent(0.18)
+        // tf.textColor = Theme.textPrimary
+        // tf.backgroundColor = Theme.surface.withAlphaComponent(0.18)
         tf.layer.cornerRadius = 12
         tf.layer.masksToBounds = true
 
@@ -143,7 +143,7 @@ final class SignupViewController: UIViewController {
         let placeholder = tf.placeholder ?? ""
         tf.attributedPlaceholder = NSAttributedString(
             string: placeholder,
-            attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
+            // attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
         )
     }
 }

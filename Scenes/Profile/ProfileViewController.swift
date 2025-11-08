@@ -5,187 +5,125 @@
 //  Created by Ramiro Flores Villarreal on 16/10/25.
 //
 
+
 import UIKit
-import PhotosUI
 import FirebaseAuth
-import FirebaseStorage
-internal import FirebaseFirestoreInternal
+import FirebaseFirestore
 
-protocol EditProfileViewControllerDelegate: AnyObject {
-    func editProfileDidSave()
-}
+final class ProfileViewController: UIViewController {
 
-final class ProfileViewController: ScrollingStackViewController, EditProfileViewControllerDelegate {
+    @IBOutlet private weak var avatarImageView: UIImageView!
+    @IBOutlet private weak var nameLabel: UILabel!
+    @IBOutlet private weak var roleLabel: UILabel!
+    @IBOutlet private weak var locationLabel: UILabel!
+    @IBOutlet private weak var websiteButton: UIButton!
+    @IBOutlet private weak var bioBodyLabel: UILabel!
 
-    private let header = ProfileHeaderView()
-    private let aboutTitle = UILabel()
-    private let aboutBody = UILabel()
+    private let db = Firestore.firestore()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Profile"
-        buildUI()
+        avatarImageView.layer.cornerRadius = 36
+        avatarImageView.clipsToBounds = true
+        Task { await loadProfile() }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        loadProfile()
+        // Defensive refresh in case delegate wasn’t called for any reason
+        Task { await loadProfile() }
     }
 
-    // MARK: - UI
-    private func buildUI() {
-        header.onEditTapped = { [weak self] in self?.presentEditProfile() }
-        header.onAvatarTapped = { [weak self] in self?.pickNewAvatar() }
-        stackView.addArrangedSubview(header)
-
-        aboutTitle.text = "About"
-        aboutTitle.font = UIFont.preferredFont(forTextStyle: .headline)
-        aboutBody.text = "Short bio / description goes here."
-        aboutBody.numberOfLines = 0
-        aboutBody.font = UIFont.preferredFont(forTextStyle: .body)
-
-        let aboutStack = UIStackView(arrangedSubviews: [aboutTitle, aboutBody])
-        aboutStack.axis = .vertical
-        aboutStack.spacing = 8
-        stackView.addArrangedSubview(aboutStack)
-
-        stackView.addArrangedSubview(makePlaceholder(height: 300, title: "Sumas / Achievements"))
-    }
-
-    private func makePlaceholder(height: CGFloat, title: String) -> UIView {
-        let label = UILabel()
-        label.text = title
-        label.textAlignment = .center
-        label.textColor = .secondaryLabel
-
-        let box = UIView()
-        box.backgroundColor = .secondarySystemBackground
-        box.layer.cornerRadius = 12
-        box.translatesAutoresizingMaskIntoConstraints = false
-        box.heightAnchor.constraint(equalToConstant: height).isActive = true
-        box.addSubview(label)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: box.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: box.centerYAnchor)
-        ])
-        return box
+    @IBAction private func editProfileTapped(_ sender: UIButton) {
+        let vc = EditProfileViewController()
+        vc.delegate = self
+        present(UINavigationController(rootViewController: vc), animated: true)
     }
 
     // MARK: - Data
-    private func loadProfile() {
-        Task {
-            do {
-                if let user = try await AuthService.shared.loadCurrentUser() {
-                    await MainActor.run {
-                        header.name = user.displayName
-                        header.role = user.role
-                        aboutBody.text = user.bio.isEmpty ? "No bio yet." : user.bio
-                    }
-                    if let urlString = user.photoURL, let url = URL(string: urlString) {
-                        await loadAvatar(from: url)
-                    } else {
-                        await MainActor.run { self.header.setAvatarImage(nil) }
-                    }
-                }
-            } catch { await MainActor.run { self.showError("Failed to load profile", error) } }
+    private func defaultRoleText(from raw: String?) -> String {
+        guard let raw, raw.isEmpty == false else { return "media creator" }
+        return raw
+    }
+    private func defaultBio(_ text: String?) -> String {
+        let t = (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? "No bio yet." : t
+    }
+
+    private func applyUI(name: String, role: String, location: String?, website: String?, bio: String?, photoURL: String?) async {
+        nameLabel.text = name
+        roleLabel.text = defaultRoleText(from: role)
+        locationLabel.text = (location?.isEmpty == false) ? location : "—"
+        bioBodyLabel.text = defaultBio(bio)
+
+        if let website, website.isEmpty == false {
+            websiteButton.setTitle(website, for: .normal)
+            websiteButton.isHidden = false
+        } else {
+            websiteButton.setTitle(nil, for: .normal)
+            websiteButton.isHidden = true
+        }
+
+        if let photoURL, let url = URL(string: photoURL) {
+            await loadAvatar(from: url)
+        } else {
+            await MainActor.run {
+                self.avatarImageView.image = UIImage(systemName: "person.circle.fill")
+                self.avatarImageView.tintColor = .systemGray3
+            }
+        }
+    }
+
+    private func loadProfile() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        do {
+            let snap = try await db.collection("users").document(uid).getDocument()
+            let data = snap.data() ?? [:]
+
+            let name     = data["displayName"] as? String ?? "User"
+            let role     = data["role"] as? String ?? "media creator"
+            let location = data["location"] as? String
+            let website  = data["website"] as? String
+            let bio      = data["bio"] as? String
+            let photoURL = data["photoURL"] as? String
+
+            await applyUI(name: name, role: role, location: location, website: website, bio: bio, photoURL: photoURL)
+        } catch {
+            await MainActor.run { self.showError("Failed to load profile", error) }
         }
     }
 
     @MainActor
-    private func loadAvatar(from url: URL) async {
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            self.header.setAvatarImage(UIImage(data: data))
-        } catch {
-            // Not fatal; just keep placeholder
-            self.header.setAvatarImage(nil)
-        }
-    }
-
-    // MARK: - Edit Profile
-    private func presentEditProfile() {
-        let edit = EditProfileViewController()
-        Task {
-            let user = try? await AuthService.shared.loadCurrentUser()
-            await MainActor.run {
-                edit.prefill = user
-                edit.delegate = self
-                let nav = UINavigationController(rootViewController: edit)
-                nav.modalPresentationStyle = .formSheet
-                self.present(nav, animated: true)
-            }
-        }
-    }
-
-    func editProfileDidSave() { loadProfile() }
-
-    // MARK: - Avatar picking & upload
-    private func pickNewAvatar() {
-        var config = PHPickerConfiguration(photoLibrary: .shared())
-        config.selectionLimit = 1
-        config.filter = .images
-
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
-        present(picker, animated: true)
-    }
-
-    private func uploadAvatar(_ image: UIImage) {
-        guard let uid = AuthService.shared.currentUserId else { return }
-
-        // Compress to JPEG (you can tune quality)
-        guard let data = image.jpegData(compressionQuality: 0.85) else { return }
-
-        let fs = FirebaseService.shared
-        let avatarRef = fs.avatarsRoot.child("\(uid).jpg")
-        let metadata = StorageMetadata()
-        metadata.contentType = "image/jpeg"
-
-        // Simple progress HUD replacement: disable user interaction briefly
-        view.isUserInteractionEnabled = false
-
-        Task {
-            do {
-                _ = try await avatarRef.putDataAsync(data, metadata: metadata)
-                let url = try await avatarRef.downloadURL()
-
-                // Save downloadURL on user doc
-                try await fs.users.document(uid).setData(["photoURL": url.absoluteString], merge: true)
-
-                // Update UI
-                await MainActor.run {
-                    self.view.isUserInteractionEnabled = true
-                    self.header.setAvatarImage(image)
-                }
-            } catch {
-                await MainActor.run {
-                    self.view.isUserInteractionEnabled = true
-                    self.showError("Upload failed", error)
-                }
-            }
-        }
-    }
-
-    // MARK: - Helpers
     private func showError(_ title: String, _ error: Error) {
         let ac = UIAlertController(title: title, message: error.localizedDescription, preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: "OK", style: .default))
         present(ac, animated: true)
     }
+
+    private func loadAvatar(from url: URL) async {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let img = UIImage(data: data) {
+                await MainActor.run { self.avatarImageView.image = img }
+            } else {
+                await MainActor.run { self.avatarImageView.image = UIImage(systemName: "person.circle.fill") }
+            }
+        } catch {
+            await MainActor.run { self.avatarImageView.image = UIImage(systemName: "person.circle.fill") }
+        }
+    }
+
+    @IBAction private func websiteTapped(_ sender: UIButton) {
+        guard let title = sender.title(for: .normal),
+              let url = URL(string: title),
+              UIApplication.shared.canOpenURL(url) else { return }
+        UIApplication.shared.open(url)
+    }
 }
 
-// MARK: - PHPicker delegate
-extension ProfileViewController: PHPickerViewControllerDelegate {
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        dismiss(animated: true)
-
-        guard let provider = results.first?.itemProvider, provider.canLoadObject(ofClass: UIImage.self) else { return }
-
-        provider.loadObject(ofClass: UIImage.self) { object, _ in
-            guard let image = object as? UIImage else { return }
-            // Optionally crop to square here before upload
-            self.uploadAvatar(image)
-        }
+// MARK: - Delegate
+extension ProfileViewController: ProfileEditingDelegate {
+    func editProfileViewControllerDidSave() {
+        Task { await loadProfile() }
     }
 }

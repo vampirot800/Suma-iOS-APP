@@ -246,7 +246,6 @@ final class ChatViewController: UIViewController {
         }
     }
 }
-
 extension ChatViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         placeholder.isHidden = !textView.text.isEmpty

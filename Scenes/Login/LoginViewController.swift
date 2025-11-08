@@ -19,7 +19,7 @@ final class LoginViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.background
+        // view.backgroundColor = Theme.background
 
         emailField.keyboardType = .emailAddress
         emailField.textContentType = .username
@@ -98,10 +98,10 @@ final class LoginViewController: UIViewController {
     
     private func styleTextField(_ tf: UITextField, placeholder: String) {
         tf.borderStyle = .none
-        tf.textColor = Theme.textPrimary
+        // tf.textColor = Theme.textPrimary
         tf.attributedPlaceholder = NSAttributedString(
             string: placeholder,
-            attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
+            // attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
         )
         tf.backgroundColor = UIColor.white.withAlphaComponent(0.92) // matches your figma “pill”
         tf.layer.cornerRadius = 16        // <- roundness here

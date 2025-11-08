@@ -2,8 +2,6 @@
 //  AuthService.swift
 //  FIT3178-App
 //
-//  Created by Ramiro Flores Villarreal on 05/10/25.
-//
 
 import Foundation
 import FirebaseAuth
@@ -28,21 +26,22 @@ final class AuthService {
         let result = try await fs.auth.createUser(withEmail: email, password: password)
         let uid = result.user.uid
 
+        // Set display name in Auth
         let change = result.user.createProfileChangeRequest()
         change.displayName = displayName
         try await change.commitChanges()
 
+        // Create user doc with an empty photoURL so your app can read it safely
         let appUser = AppUser(
             id: uid,
             displayName: displayName,
             username: email,
             role: role,
             bio: bio,
-            photoURL: nil,
+            photoURL: nil,            // stored as missing/empty in Firestore (see asData)
             tags: tags,
             searchable: tags
         )
-
         try await fs.users.document(uid).setData(appUser.asData, merge: true)
     }
 
@@ -77,11 +76,25 @@ final class AuthService {
                 username: fs.auth.currentUser?.email ?? uid,
                 role: "media creator",
                 bio: "",
-                photoURL: nil,
+                photoURL: nil,         // will serialize to missing/empty
                 tags: [],
                 searchable: []
             )
             try await ref.setData(user.asData, merge: true)
         }
+    }
+
+    // MARK: - Photo URL sync (Auth + Firestore)
+    /// Call after uploading an avatar to Storage and obtaining a downloadURL.
+    func setUserPhotoURL(_ url: URL) async throws {
+        guard let uid = currentUserId, let user = fs.auth.currentUser else { throw AuthError.missingUID }
+
+        // 1) Update FirebaseAuth profile
+        let change = user.createProfileChangeRequest()
+        change.photoURL = url
+        try await change.commitChanges()
+
+        // 2) Mirror in Firestore
+        try await fs.users.document(uid).setData(["photoURL": url.absoluteString], merge: true)
     }
 }

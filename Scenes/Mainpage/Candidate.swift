@@ -13,6 +13,8 @@ struct Candidate: Hashable {
     let id: String
     let name: String
     let role: Role
+    let website: String? 
+    let location: String?
     let bio: String
     let tags: [String]
     let photoURL: URL?
