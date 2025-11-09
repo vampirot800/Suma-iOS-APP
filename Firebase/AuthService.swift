@@ -31,16 +31,19 @@ final class AuthService {
         change.displayName = displayName
         try await change.commitChanges()
 
-        // Create user doc with an empty photoURL so your app can read it safely
+        let normalized = tags.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let searchable = normalized.map { $0.lowercased() }
+
+        // Create user doc (photoURL omitted until uploaded)
         let appUser = AppUser(
             id: uid,
             displayName: displayName,
             username: email,
             role: role,
             bio: bio,
-            photoURL: nil,            // stored as missing/empty in Firestore (see asData)
-            tags: tags,
-            searchable: tags
+            photoURL: nil,
+            tags: normalized,
+            searchable: searchable
         )
         try await fs.users.document(uid).setData(appUser.asData, merge: true)
     }
@@ -76,7 +79,7 @@ final class AuthService {
                 username: fs.auth.currentUser?.email ?? uid,
                 role: "media creator",
                 bio: "",
-                photoURL: nil,         // will serialize to missing/empty
+                photoURL: nil,
                 tags: [],
                 searchable: []
             )
@@ -84,8 +87,7 @@ final class AuthService {
         }
     }
 
-    // MARK: - Photo URL sync (Auth + Firestore)
-    /// Call after uploading an avatar to Storage and obtaining a downloadURL.
+    // MARK: - Photo URL sync
     func setUserPhotoURL(_ url: URL) async throws {
         guard let uid = currentUserId, let user = fs.auth.currentUser else { throw AuthError.missingUID }
 

@@ -10,13 +10,21 @@ import FirebaseAuth
 
 final class SignupViewController: UIViewController {
 
-    // MARK: - Outlets
+    // MARK: - Outlets (connect these in Storyboard)
     @IBOutlet weak var firstNameField: UITextField!
     @IBOutlet weak var emailField: UITextField!
     @IBOutlet weak var passwordField: UITextField!
-    @IBOutlet weak var roleSegment: UISegmentedControl! // 0=Media Creator, 1=Enterprise
+    @IBOutlet weak var roleSegment: UISegmentedControl! // 0 = Media Creator, 1 = Enterprise
     @IBOutlet weak var createButton: UIButton!
 
+    // NEW: one-line bio and the Choose Tags button
+    @IBOutlet weak var bioTextField: UITextField!       // connect to your “Write a Bio” UITextField
+    @IBOutlet weak var pickTagsButton: UIButton!        // connect to the green “Choose tags” button
+
+    // MARK: - State
+    private var selectedTags: [String] = []             // updated by TagPicker
+
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Create Account"
@@ -28,22 +36,17 @@ final class SignupViewController: UIViewController {
         emailField.autocorrectionType = .no
 
         passwordField.isSecureTextEntry = true
-        passwordField.textContentType = .newPassword
+        passwordField.textContentType = .password
         passwordField.autocapitalizationType = .none
         passwordField.autocorrectionType = .no
+        passwordField.smartDashesType = .no
+        passwordField.smartQuotesType = .no
+        passwordField.spellCheckingType = .no
 
         firstNameField.autocorrectionType = .no
         firstNameField.textContentType = .name
 
-        // Match Login VC field style
-        [firstNameField, emailField, passwordField].forEach {
-            styleTextField($0)
-        }
-
-        // Optional: pill button like your design
-        // createButton.backgroundColor = Theme.primary
-        createButton.setTitleColor(.white, for: .normal)
-        // createButton.titleLabel?.font = Theme.Font.headline()
+        [firstNameField, emailField, passwordField, bioTextField].forEach { styleTextField($0) }
     }
 
     override func viewDidLayoutSubviews() {
@@ -54,30 +57,48 @@ final class SignupViewController: UIViewController {
     }
 
     // MARK: - Actions
+    // IBAction for the storyboard button "Choose tags"
+    @IBAction func pickTagsTapped(_ sender: UIButton) {
+        let picker = TagPickerViewController(
+            initialSelection: Set(selectedTags),
+            onDone: { [weak self] selection in
+                guard let self else { return }
+                self.selectedTags = Array(selection).sorted()
+                // Optional: show a count on the button
+                let base = "Choose tags"
+                self.pickTagsButton.setTitle(
+                    self.selectedTags.isEmpty ? base : "\(base) (\(self.selectedTags.count))",
+                    for: .normal
+                )
+            }
+        )
+        present(UINavigationController(rootViewController: picker), animated: true)
+    }
+
     @IBAction func createAccountTapped(_ sender: UIButton) {
         let email = (emailField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let password = passwordField.text ?? ""
         let name = (firstNameField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let bio = (bioTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let role = (roleSegment.selectedSegmentIndex == 1) ? "enterprise" : "media creator"
 
         guard !email.isEmpty, !password.isEmpty, !name.isEmpty else {
             alert(title: "Missing Info", message: "Please enter first name, email and password.")
             return
         }
 
-        let displayName = name
-        let role = (roleSegment.selectedSegmentIndex == 1) ? "enterprise" : "media creator"
-
         createButton.isEnabled = false
 
         Task {
             do {
+                // AuthService.signUp should already lower-case tags to create `searchable`
                 try await AuthService.shared.signUp(
                     email: email,
                     password: password,
-                    displayName: displayName,
+                    displayName: name,
                     role: role,
-                    bio: "",
-                    tags: []
+                    bio: bio,
+                    tags: selectedTags
                 )
                 await MainActor.run { self.swapToMainRoot() }
             } catch {
@@ -129,8 +150,6 @@ final class SignupViewController: UIViewController {
     // Same look as Login VC
     private func styleTextField(_ tf: UITextField?) {
         guard let tf else { return }
-        // tf.textColor = Theme.textPrimary
-        // tf.backgroundColor = Theme.surface.withAlphaComponent(0.18)
         tf.layer.cornerRadius = 12
         tf.layer.masksToBounds = true
 
@@ -138,12 +157,5 @@ final class SignupViewController: UIViewController {
         let pad = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
         tf.leftView = pad
         tf.leftViewMode = .always
-
-        // Placeholder tint
-        let placeholder = tf.placeholder ?? ""
-        tf.attributedPlaceholder = NSAttributedString(
-            string: placeholder,
-            // attributes: [.foregroundColor: Theme.textSecondary.withAlphaComponent(0.7)]
-        )
     }
 }

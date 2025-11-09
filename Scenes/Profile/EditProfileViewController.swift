@@ -18,7 +18,7 @@ protocol ProfileEditingDelegate: AnyObject {
 
 final class EditProfileViewController: UIViewController {
 
-    // MARK: - Theme (colors pulled from Assets; keep your palette)
+    // MARK: - Theme
     struct AppColors {
         static let surface = UIColor(named: "Background2") ?? UIColor.systemGroupedBackground
         static let header  = UIColor(named: "Header") ?? UIColor.systemGreen
@@ -39,27 +39,40 @@ final class EditProfileViewController: UIViewController {
         b.widthAnchor.constraint(equalToConstant: 96).isActive = true
         b.heightAnchor.constraint(equalToConstant: 96).isActive = true
         b.imageView?.contentMode = .scaleAspectFill
+        // Clean look: no camera badge overlay
         b.setImage(UIImage(systemName: "person.crop.circle"), for: .normal)
         b.tintColor = .systemGray3
         return b
-    }()
-    private let cameraBadge: UIImageView = {
-        let i = UIImageView(image: UIImage(systemName: "camera.fill"))
-        i.tintColor = .white
-        i.backgroundColor = UIColor.black.withAlphaComponent(0.45)
-        i.layer.cornerRadius = 12
-        i.clipsToBounds = true
-        i.translatesAutoresizingMaskIntoConstraints = false
-        i.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        i.heightAnchor.constraint(equalToConstant: 24).isActive = true
-        return i
     }()
 
     private let nameField = UITextField()
     private let roleField = UITextField()
     private let locationField = UITextField()
     private let websiteField = UITextField()
+
+    // Bio
     private let bioView = UITextView()
+
+    // NEW: Tags
+    private let tagsRow = UIStackView()
+    private let chooseTagsButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("Choose tags", for: .normal)
+        b.setTitleColor(AppColors.pill, for: .normal)
+        b.backgroundColor = AppColors.header
+        b.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        b.layer.cornerRadius = 16
+        b.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        return b
+    }()
+    private let tagsCountLabel: UILabel = {
+        let l = UILabel()
+        l.text = "Selected (0)"
+        l.font = .systemFont(ofSize: 14, weight: .regular)
+        l.textColor = .secondaryLabel
+        l.setContentHuggingPriority(.required, for: .horizontal)
+        return l
+    }()
 
     private let saveButton: UIButton = {
         let b = UIButton(type: .system)
@@ -79,6 +92,9 @@ final class EditProfileViewController: UIViewController {
     private let db = Firestore.firestore()
     private let storage = Storage.storage()
     private var selectedAvatar: UIImage? { didSet { updateSaveAvailability() } }
+
+    // NEW: current tags
+    private var selectedTags: Set<String> = [] { didSet { updateTagsUI(); updateSaveAvailability() } }
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -115,7 +131,7 @@ final class EditProfileViewController: UIViewController {
             content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
         ])
 
-        // Avatar row + badge
+        // Avatar row
         let avatarRow = UIView()
         avatarRow.translatesAutoresizingMaskIntoConstraints = false
         avatarRow.heightAnchor.constraint(equalToConstant: 96).isActive = true
@@ -126,13 +142,6 @@ final class EditProfileViewController: UIViewController {
             avatarButton.centerYAnchor.constraint(equalTo: avatarRow.centerYAnchor)
         ])
         avatarButton.addTarget(self, action: #selector(avatarTapped), for: .touchUpInside)
-
-        avatarButton.addSubview(cameraBadge)
-        NSLayoutConstraint.activate([
-            cameraBadge.bottomAnchor.constraint(equalTo: avatarButton.bottomAnchor, constant: -4),
-            cameraBadge.trailingAnchor.constraint(equalTo: avatarButton.trailingAnchor, constant: -4)
-        ])
-
         content.addArrangedSubview(avatarRow)
 
         // Fields
@@ -151,6 +160,17 @@ final class EditProfileViewController: UIViewController {
         bioView.heightAnchor.constraint(equalToConstant: 160).isActive = true
         bioView.delegate = self
         content.addArrangedSubview(bioView)
+
+        // --- NEW: Tags row (button + count), goes right under Bio ---
+        tagsRow.axis = .horizontal
+        tagsRow.alignment = .fill
+        tagsRow.spacing = 12
+        tagsRow.addArrangedSubview(chooseTagsButton)
+        tagsRow.addArrangedSubview(tagsCountLabel)
+        chooseTagsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        content.addArrangedSubview(tagsRow)
+
+        chooseTagsButton.addTarget(self, action: #selector(chooseTagsTapped), for: .touchUpInside)
 
         // Save
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
@@ -195,6 +215,10 @@ final class EditProfileViewController: UIViewController {
                 websiteField.text  = data["website"] as? String
                 bioView.text       = data["bio"] as? String
 
+                if let arr = data["tags"] as? [String] {
+                    self.selectedTags = Set(arr)
+                }
+
                 if let s = data["photoURL"] as? String, let url = URL(string: s) {
                     let (d, _) = try await URLSession.shared.data(from: url)
                     if let img = UIImage(data: d) {
@@ -207,16 +231,25 @@ final class EditProfileViewController: UIViewController {
         }
     }
 
+    private func updateTagsUI() {
+        tagsCountLabel.text = "Selected (\(selectedTags.count))"
+        let base = "Choose tags"
+        let title = selectedTags.isEmpty ? base : "\(base) (\(selectedTags.count))"
+        chooseTagsButton.setTitle(title, for: .normal)
+    }
+
     // MARK: - Actions
     @objc private func textChanged() { updateSaveAvailability() }
 
     private func updateSaveAvailability() {
+        // Keep simple: enable when something is non-empty or avatar/tags changed.
         let changed =
             !(nameField.text ?? "").isEmpty ||
             !(roleField.text ?? "").isEmpty ||
             !(locationField.text ?? "").isEmpty ||
             !(websiteField.text ?? "").isEmpty ||
             !(bioView.text ?? "").isEmpty ||
+            !selectedTags.isEmpty ||
             selectedAvatar != nil
 
         saveButton.isEnabled = changed
@@ -232,6 +265,16 @@ final class EditProfileViewController: UIViewController {
         present(picker, animated: true)
     }
 
+    @objc private func chooseTagsTapped() {
+        let picker = TagPickerViewController(
+            initialSelection: selectedTags,
+            onDone: { [weak self] newSelection in
+                self?.selectedTags = newSelection
+            }
+        )
+        present(UINavigationController(rootViewController: picker), animated: true)
+    }
+
     @objc private func saveTapped() {
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
@@ -240,6 +283,8 @@ final class EditProfileViewController: UIViewController {
         let location = locationField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let website  = websiteField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let bio      = bioView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let tags     = Array(selectedTags).sorted()
+        let searchable = tags.map { $0.lowercased() }   // mirror for simple search
 
         Task {
             view.isUserInteractionEnabled = false
@@ -250,7 +295,9 @@ final class EditProfileViewController: UIViewController {
                 "role": role,
                 "location": location,
                 "website": website,
-                "bio": bio
+                "bio": bio,
+                "tags": tags,
+                "searchable": searchable
             ]
 
             // Upload avatar if changed

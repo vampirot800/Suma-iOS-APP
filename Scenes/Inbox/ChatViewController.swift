@@ -98,6 +98,12 @@ final class ChatViewController: UIViewController {
     private var listener: ListenerRegistration?
     private var me: String { Auth.auth().currentUser?.uid ?? "" }
 
+    // NAV state snapshots (so changes don't leak to other VCs)
+    private var previousNavBarHidden = false
+    private var previousTranslucent  = false
+    private var previousBgImage: UIImage?
+    private var previousShadowImage: UIImage?
+
     // UI
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let inputBar = UIView()
@@ -280,12 +286,89 @@ final class ChatViewController: UIViewController {
         }
     }
 
-    // Back/close handling
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        setupBackButton()
+    // MARK: - Nav handling (Chat-only)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        if let nav = navigationController {
+            // snapshot previous state so we can restore when leaving chat
+            previousNavBarHidden = nav.isNavigationBarHidden
+            previousTranslucent  = nav.navigationBar.isTranslucent
+            previousBgImage      = nav.navigationBar.backgroundImage(for: .default)
+            previousShadowImage  = nav.navigationBar.shadowImage
+
+            // show the bar so back control can exist, but keep it visually transparent
+            nav.setNavigationBarHidden(false, animated: animated)
+            applyTransparentNavBarForChat()
+            nav.interactivePopGestureRecognizer?.isEnabled = true
+        }
+
+        navigationItem.hidesBackButton = false
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        setupBackButton() // keep your logic; we just ensure a fallback below
+        // Fallback: if pushed and system back didn't render, add one.
+        if navigationItem.leftBarButtonItem == nil,
+           navigationController?.viewControllers.first != self {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(
+                image: UIImage(systemName: "chevron.backward"),
+                style: .plain,
+                target: self,
+                action: #selector(forceBack)
+            )
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // restore nav bar visibility and visuals so other VCs aren't affected
+        navigationController?.setNavigationBarHidden(previousNavBarHidden, animated: animated)
+        restoreNavBarAppearance()
+    }
+
+    // Make the nav bar fully transparent while Chat is visible (no black header)
+    private func applyTransparentNavBarForChat() {
+        if #available(iOS 15.0, *) {
+            let clear = UINavigationBarAppearance()
+            clear.configureWithTransparentBackground()
+            clear.backgroundColor = .clear
+            clear.shadowColor = .clear
+
+            navigationItem.standardAppearance   = clear
+            navigationItem.scrollEdgeAppearance = clear
+            navigationItem.compactAppearance    = clear
+        } else {
+            guard let navBar = navigationController?.navigationBar else { return }
+            navBar.setBackgroundImage(UIImage(), for: .default)
+            navBar.shadowImage = UIImage()
+            navBar.isTranslucent = true
+            navBar.backgroundColor = .clear
+        }
+        // keep your layout under the clear bar so your custom header remains unchanged
+        edgesForExtendedLayout = [.top, .left, .right, .bottom]
+    }
+
+    private func restoreNavBarAppearance() {
+        if #available(iOS 15.0, *) {
+            navigationItem.standardAppearance   = nil
+            navigationItem.scrollEdgeAppearance = nil
+            navigationItem.compactAppearance    = nil
+        } else {
+            guard let navBar = navigationController?.navigationBar else { return }
+            navBar.setBackgroundImage(previousBgImage, for: .default)
+            navBar.shadowImage = previousShadowImage
+            navBar.isTranslucent = previousTranslucent
+            navBar.backgroundColor = nil
+        }
+    }
+
+    @objc private func forceBack() {
+        navigationController?.popViewController(animated: true)
+    }
+
+    // Back/close handling (your method kept)
     private func setupBackButton() {
         let isRootOfPresentedNav =
         (navigationController?.viewControllers.first == self) && (presentingViewController != nil)

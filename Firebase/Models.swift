@@ -52,15 +52,16 @@ struct AppUser: Identifiable {
     }
 
     var asData: [String:Any] {
-        [
+        var d: [String:Any] = [
             "displayName": displayName,
             "username": username,
             "role": role,
             "bio": bio,
-            "photoURL": photoURL as Any,
             "tags": tags,
             "searchable": searchable
         ]
+        if let photoURL { d["photoURL"] = photoURL }
+        return d
     }
 }
 
@@ -104,7 +105,7 @@ struct Message: Identifiable {
         self.createdat = created
         self.type = data.str("type", default: "text")
     }
-} // <-- this closing brace was missing in your file
+}
 
 // MARK: - SUMA (tinder-like cards)
 struct Suma: Identifiable {
