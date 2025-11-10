@@ -854,6 +854,9 @@
                             <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="z5X-p0-TQy">
                                 <rect key="frame" x="24" y="128" width="345" height="32"/>
                                 <color key="backgroundColor" name="Secondary"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="31" id="eY6-hr-nRe"/>
+                                </constraints>
                                 <segments>
                                     <segment title="For You"/>
                                     <segment title="Portfolios"/>

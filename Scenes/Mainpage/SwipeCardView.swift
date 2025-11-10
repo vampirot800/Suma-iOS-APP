@@ -14,6 +14,7 @@ import UIKit
 
 // MARK: - View model
 public struct CandidateVM {
+    public let userId: String          // <-- NEW
     public let name: String
     public let subtitle: String
     public let tags: [String]
@@ -25,7 +26,8 @@ public struct CandidateVM {
     public let website: String?
     public let location: String?
 
-    public init(name: String,
+    public init(userId: String,
+                name: String,
                 subtitle: String,
                 tags: [String],
                 imageURL: URL?,
@@ -35,6 +37,7 @@ public struct CandidateVM {
                 website: String? = nil,
                 location: String? = nil,
                 placeholder: UIImage? = nil) {
+        self.userId = userId
         self.name = name
         self.subtitle = subtitle
         self.tags = tags
@@ -47,6 +50,7 @@ public struct CandidateVM {
         self.image = placeholder
     }
 }
+
 
 // MARK: - Inter font utility
 private enum InterFont {
