@@ -866,36 +866,36 @@
                                 </connections>
                             </segmentedControl>
                             <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="AQJ-pb-gVl">
-                                <rect key="frame" x="24" y="181" width="345" height="476"/>
+                                <rect key="frame" x="24" y="181" width="345" height="503"/>
                                 <color key="backgroundColor" name="Background2"/>
                             </view>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="LJd-d7-MCY">
-                                <rect key="frame" x="250.66666666666663" y="682" width="72" height="72"/>
+                                <rect key="frame" x="216.66666666666663" y="709" width="140" height="50"/>
                                 <color key="backgroundColor" name="likeGreen"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="72" id="EId-K8-T5b"/>
-                                    <constraint firstAttribute="height" constant="72" id="ilM-dh-mcw"/>
+                                    <constraint firstAttribute="width" constant="140" id="EId-K8-T5b"/>
+                                    <constraint firstAttribute="height" constant="50" id="ilM-dh-mcw"/>
                                 </constraints>
                                 <color key="tintColor" name="Background2"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain">
-                                    <imageReference key="image" image="hand.thumbsup.fill" catalog="system" symbolScale="large"/>
+                                    <imageReference key="image" image="plus" catalog="system" symbolScale="large"/>
                                 </buttonConfiguration>
                                 <connections>
                                     <action selector="didTapLike:" destination="dRk-K8-xen" eventType="touchUpInside" id="Sea-sP-atX"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="k6T-tL-yIv">
-                                <rect key="frame" x="70.666666666666671" y="682" width="72.000000000000014" height="72"/>
+                                <rect key="frame" x="36.666666666666657" y="709" width="140" height="50"/>
                                 <color key="backgroundColor" name="dislikeRed"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="72" id="A3M-gB-P63"/>
-                                    <constraint firstAttribute="width" constant="72" id="ymn-ao-aVk"/>
+                                    <constraint firstAttribute="height" constant="50" id="A3M-gB-P63"/>
+                                    <constraint firstAttribute="width" constant="140" id="ymn-ao-aVk"/>
                                 </constraints>
                                 <color key="tintColor" name="Background2"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain">
-                                    <imageReference key="image" image="hand.thumbsdown.fill" catalog="system" symbolScale="large"/>
+                                    <imageReference key="image" image="minus" catalog="system" symbolScale="large"/>
                                 </buttonConfiguration>
                                 <connections>
                                     <action selector="didTapDislike:" destination="dRk-K8-xen" eventType="touchUpInside" id="UQ9-wp-k9m"/>
@@ -907,13 +907,13 @@
                         <constraints>
                             <constraint firstItem="AQJ-pb-gVl" firstAttribute="leading" secondItem="UrU-m1-DhT" secondAttribute="leading" constant="24" id="3Uv-NW-MIW"/>
                             <constraint firstItem="LJd-d7-MCY" firstAttribute="centerX" secondItem="UrU-m1-DhT" secondAttribute="centerX" constant="90" id="3kg-1c-MlT"/>
-                            <constraint firstItem="UrU-m1-DhT" firstAttribute="bottom" secondItem="k6T-tL-yIv" secondAttribute="bottom" constant="30" id="LWj-eJ-Vn2"/>
+                            <constraint firstItem="UrU-m1-DhT" firstAttribute="bottom" secondItem="k6T-tL-yIv" secondAttribute="bottom" constant="25" id="LWj-eJ-Vn2"/>
                             <constraint firstItem="z5X-p0-TQy" firstAttribute="leading" secondItem="UrU-m1-DhT" secondAttribute="leading" constant="24" id="Sar-eb-5Gx"/>
                             <constraint firstItem="UrU-m1-DhT" firstAttribute="trailing" secondItem="z5X-p0-TQy" secondAttribute="trailing" constant="24" id="TkP-dk-ybr"/>
                             <constraint firstItem="UrU-m1-DhT" firstAttribute="trailing" secondItem="AQJ-pb-gVl" secondAttribute="trailing" constant="24" id="WPf-Oh-zcY"/>
                             <constraint firstItem="AQJ-pb-gVl" firstAttribute="bottom" secondItem="k6T-tL-yIv" secondAttribute="top" constant="-25" id="YTe-bS-VF3"/>
                             <constraint firstItem="k6T-tL-yIv" firstAttribute="centerX" secondItem="UrU-m1-DhT" secondAttribute="centerX" constant="-90" id="d2w-wN-hua"/>
-                            <constraint firstItem="UrU-m1-DhT" firstAttribute="bottom" secondItem="LJd-d7-MCY" secondAttribute="bottom" constant="30" id="fQQ-oD-L7o"/>
+                            <constraint firstItem="UrU-m1-DhT" firstAttribute="bottom" secondItem="LJd-d7-MCY" secondAttribute="bottom" constant="25" id="fQQ-oD-L7o"/>
                             <constraint firstItem="z5X-p0-TQy" firstAttribute="top" secondItem="UrU-m1-DhT" secondAttribute="top" constant="10" id="qbI-fd-Yda"/>
                             <constraint firstItem="AQJ-pb-gVl" firstAttribute="top" secondItem="z5X-p0-TQy" secondAttribute="bottom" constant="22" id="qwi-BZ-jiD"/>
                         </constraints>
@@ -938,10 +938,10 @@
         <image name="LogoGlyph" width="29.5" height="19.5"/>
         <image name="Wallpaper" width="414" height="896"/>
         <image name="gearshape.fill" catalog="system" width="128" height="123"/>
-        <image name="hand.thumbsdown.fill" catalog="system" width="128" height="121"/>
-        <image name="hand.thumbsup.fill" catalog="system" width="128" height="121"/>
+        <image name="minus" catalog="system" width="128" height="26"/>
         <image name="person.crop.circle.fill" catalog="system" width="128" height="123"/>
         <image name="person.fill" catalog="system" width="128" height="120"/>
+        <image name="plus" catalog="system" width="128" height="113"/>
         <image name="tray.fill" catalog="system" width="128" height="88"/>
         <image name="welcome" width="1550" height="1305"/>
         <namedColor name="Background">

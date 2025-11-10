@@ -1,11 +1,14 @@
-////
+//
 //  MainPageViewController.swift
 //  FIT3178-App
 //
 //  Storyboard-only version (no programmatic UI fallbacks)
+//  Live Firestore-backed cards (profiles)
 //
 
 import UIKit
+import FirebaseAuth
+import FirebaseFirestore
 
 final class MainPageViewController: UIViewController {
 
@@ -20,14 +23,15 @@ final class MainPageViewController: UIViewController {
     private var queue: [CandidateVM] = []
     private var topCard: SwipeCardView?
 
+    // Firestore
+    private let db = Firestore.firestore()
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        makeDemoData()
-        applyFilter()
-        layoutDeck()
-        presentNextCardIfNeeded()
+        // Load real people from Firestore instead of demo data
+        fetchUsersFromFirestore()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -57,34 +61,107 @@ final class MainPageViewController: UIViewController {
         animateOff(card, toRight: true)
     }
 
+    // MARK: - Firestore fetch
+    private func fetchUsersFromFirestore() {
+        guard let myUID = Auth.auth().currentUser?.uid else { return }
 
-    // MARK: - Demo data & filtering (unchanged logic)
-    private func makeDemoData() {
-        let raw: [(String, String, [String])] = [
-            ("Lia Gomez", "Offers: travel • food • photo", ["travel","food","photo"]),
-            ("GamerZone", "GamerZone • www.gamerzone.com", ["lorem","ipsum","dolor","sit amet","consectetur"]),
-            ("Glam Studio", "Offers: makeup • hair", ["beauty","studio","photo"]),
-            ("Jet Travel", "Tours & travel", ["travel","adventure","video"]),
-            ("Cafe Verde", "Local coffee brand", ["coffee","beans","roastery"])
-        ]
-        allCandidates = raw.map { CandidateVM(name: $0.0, subtitle: $0.1, tags: $0.2, image: nil) }
+        // Read public profile data for signed-in users (allowed by your rules)
+        db.collection("users")
+            .whereField("displayName", isGreaterThan: "")    // light index-friendly filter
+            .limit(to: 80)                                   // paging later if needed
+            .getDocuments { [weak self] snap, error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Fetch users error:", error)
+                    return
+                }
+                let docs = snap?.documents ?? []
+
+                // Map -> CandidateVM used by SwipeCardView
+                var vms: [CandidateVM] = []
+                vms.reserveCapacity(docs.count)
+
+                for doc in docs {
+                    // Skip myself
+                    if doc.documentID == myUID { continue }
+
+                    let data = doc.data()
+
+                    let displayName = (data["displayName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        ?? (data["username"] as? String)
+                        ?? "—"
+
+                    let role = (data["role"] as? String) ?? ""
+                    let bio  = (data["bio"] as? String) ?? ""
+
+                    let tags = (data["tags"] as? [String]) ?? []
+
+                    // Preferred: Storage download URL already stored as string
+                    let photoURLString = data["photoURL"] as? String
+                    let photoURL = URL(string: photoURLString ?? "")
+
+                    let cvURLString = data["cvURL"] as? String
+                    let cvURL = URL(string: cvURLString ?? "")
+                    
+                    // Pull optional meta fields from the user doc
+                    let website: String? = {
+                        let raw = (data["website"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        return raw.isEmpty ? nil : raw
+                    }()
+
+                    let location: String? = {
+                        let raw = (data["location"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        return raw.isEmpty ? nil : raw
+                    }()
+
+
+                    // You can choose what to show as the subtitle; Figma shows role + maybe site
+                    let subtitle: String
+                    if !role.isEmpty {
+                        subtitle = role
+                    } else if !bio.isEmpty {
+                        // short bio tease
+                        subtitle = bio
+                    } else {
+                        subtitle = "—"
+                    }
+
+                    let vm = CandidateVM(
+                        name: displayName,
+                        subtitle: subtitle,
+                        tags: tags,
+                        imageURL: photoURL,
+                        role: role,
+                        bio: bio,
+                        cvURL: cvURL,
+                        website: website,
+                        location: location,
+                        placeholder: nil
+                    )
+                    vms.append(vm)
+                }
+
+                DispatchQueue.main.async {
+                    self.allCandidates = vms
+                    self.applyFilter()
+                    self.layoutDeck()
+                    self.presentNextCardIfNeeded()
+                }
+            }
     }
 
+    // MARK: - Filtering (kept simple; tweak to your needs)
     private var filtered: [CandidateVM] {
         switch segmentedControl.selectedSegmentIndex {
-        case 0:
+        case 0: // For You
             return allCandidates
-        case 1:
-            return allCandidates.filter {
-                $0.name.lowercased().contains("zone")
-                || $0.tags.contains(where: { ["lorem","ipsum","dolor","sit amet","consectetur"].contains($0) })
-            }
-        default:
-            return allCandidates.filter {
-                let n = $0.name.lowercased()
-                return n.contains("travel") || n.contains("glam")
-                    || n.contains("brands")
-                    || n.contains("cafe")
+        case 1: // Portfolios — proxy using tags presence
+            return allCandidates.filter { !$0.tags.isEmpty }
+        default: // Ideas — proxy using role/bio keywords
+            return allCandidates.filter { vm in
+                let r = (vm.role ?? "").lowercased()
+                let b = (vm.bio ?? "").lowercased()
+                return r.contains("design") || r.contains("media") || b.contains("idea")
             }
         }
     }

@@ -84,7 +84,7 @@ final class PortfolioEditorViewController: UIViewController {
         let b = UIButton(type: .system)
         b.setTitle("View CV", for: .normal)
         b.setTitleColor(.label, for: .normal) // readable on light background
-        b.backgroundColor = lightFill
+        b.backgroundColor = darkFill
         b.layer.cornerRadius = 12
         b.heightAnchor.constraint(equalToConstant: 42).isActive = true
         b.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
