@@ -14,6 +14,7 @@ final class ProfileHeaderView: UIView {
     private let nameLabel = UILabel()
     private let roleLabel = UILabel()
     private let editButton = UIButton(type: .system)
+    private let portfolioButton = UIButton(type: .system)
     private let hStack = UIStackView()
 
     /// Called when the pencil button is tapped
@@ -21,6 +22,10 @@ final class ProfileHeaderView: UIView {
 
     /// Called when the avatar image view is tapped
     var onAvatarTapped: (() -> Void)?
+    
+    var onPortfolioTapped: (() -> Void)?
+    
+
 
     // Editable in Attributes Inspector for live IB preview
     @IBInspectable var name: String = "Your Name" { didSet { nameLabel.text = name } }

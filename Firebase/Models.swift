@@ -16,7 +16,7 @@ fileprivate extension Dictionary where Key == String, Value == Any {
     func arrStr(_ k: String) -> [String] { self[k] as? [String] ?? [] }
     func date(_ k: String) -> Date? {
         if let ts = self[k] as? Timestamp { return ts.dateValue() }
-        if let d = self[k] as? Date { return d }
+        if let d  = self[k] as? Date { return d }
         return nil
     }
 }
@@ -138,6 +138,45 @@ struct Suma: Identifiable {
             "date": Timestamp(date: date),
             "link": link,
             "summary": summary
+        ]
+    }
+}
+
+// MARK: - PORTFOLIOS
+struct PortfolioItem: Identifiable {
+    var id: String?
+    var title: String
+    var role: String
+    var description: String
+    var startDate: Date?
+    var endDate: Date?
+    var skills: [String]
+    var mediaURLs: [String]
+    var createdAt: Date?
+
+    init?(doc: DocumentSnapshot) {
+        guard let data = doc.data() else { return nil }
+        self.id = doc.documentID
+        self.title = data["title"] as? String ?? ""
+        self.role = data["role"] as? String ?? ""
+        self.description = data["description"] as? String ?? ""
+        self.startDate = (data["startDate"] as? Timestamp)?.dateValue()
+        self.endDate = (data["endDate"] as? Timestamp)?.dateValue()
+        self.skills = data["skills"] as? [String] ?? []
+        self.mediaURLs = data["mediaURLs"] as? [String] ?? []
+        self.createdAt = (data["createdAt"] as? Timestamp)?.dateValue()
+    }
+
+    var asData: [String: Any] {
+        [
+            "title": title,
+            "role": role,
+            "description": description,
+            "startDate": startDate != nil ? Timestamp(date: startDate!) : NSNull(),
+            "endDate": endDate != nil ? Timestamp(date: endDate!) : NSNull(),
+            "skills": skills,
+            "mediaURLs": mediaURLs,
+            "createdAt": Timestamp(date: createdAt ?? Date())
         ]
     }
 }

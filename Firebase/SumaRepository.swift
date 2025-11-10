@@ -11,9 +11,10 @@ import FirebaseFirestore
 final class SumaRepository {
     private let fs = FirebaseService.shared
 
+    // Live query for a user's sumas, ordered by date desc
     func observeMySumas(uid: String,
                         onChange: @escaping ([Suma]) -> Void) -> ListenerRegistration {
-        fs.sumas
+        return fs.sumas
             .whereField("ownerId", isEqualTo: uid)
             .order(by: "date", descending: true)
             .addSnapshotListener { qs, _ in
@@ -22,10 +23,12 @@ final class SumaRepository {
             }
     }
 
+    // Create (or upsert) a Suma
     func addSuma(_ s: Suma) async throws {
         try await fs.sumas.addDocument(data: s.asData)
     }
 
+    // Delete by document id
     func deleteSuma(id: String) async throws {
         try await fs.sumas.document(id).delete()
     }

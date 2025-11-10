@@ -5,13 +5,14 @@
 //  Created by Ramiro Flores Villarreal on 16/10/25.
 //
 
+
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
 final class ProfileViewController: UIViewController {
 
-    // MARK: - Existing outlets
+    // MARK: - Outlets (existing)
     @IBOutlet private weak var avatarImageView: UIImageView!
     @IBOutlet private weak var nameLabel: UILabel!
     @IBOutlet private weak var roleLabel: UILabel!
@@ -19,34 +20,37 @@ final class ProfileViewController: UIViewController {
     @IBOutlet private weak var websiteButton: UIButton!
     @IBOutlet private weak var bioBodyLabel: UILabel!
 
-    // MARK: - Tags UI (optional; wire if present)
-    @IBOutlet private weak var tagsCollectionView: UICollectionView?
-    /// Optional height constraint. Connect this if you want the tag list to auto-expand
-    /// and avoid inner scrolling. Safe to leave nil if you prefer the collection view to scroll.
-    @IBOutlet private weak var tagsCollectionHeight: NSLayoutConstraint?
+    // MARK: - Tags UI (existing)
+    @IBOutlet private weak var tagsCollectionView: UICollectionView!
+    @IBOutlet private weak var tagsHeightConstraint: NSLayoutConstraint!
+
+    // MARK: - Portfolios UI (existing)
+    @IBOutlet private weak var portfolioCollectionView: UICollectionView!
+    @IBOutlet private weak var portfolioHeightConstraint: NSLayoutConstraint!
 
     // MARK: - State
     private let db = Firestore.firestore()
     private var tags: [String] = []
-    private var programmaticTagsHeight: NSLayoutConstraint?
+    private var portfolioItems: [PortfolioItem] = []
 
-    // Reuse ID
+    // Reuse IDs
     private static let pillReuseID = "TagPillCell"
+    private static let portfolioReuseID = PortfolioCardCell.reuseID
 
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // Avatar styling like the old file
         avatarImageView.layer.cornerRadius = 36
         avatarImageView.clipsToBounds = true
 
-        // Configure tags collection if it exists
+        // ---- Tags collection (pills) ----
         if let cv = tagsCollectionView {
             cv.dataSource = self
             cv.delegate   = self
-
-            // Register a programmatic pill cell so no storyboard cell is required
+            cv.backgroundColor = .clear
             cv.register(PillCell.self, forCellWithReuseIdentifier: Self.pillReuseID)
-
             if let flow = cv.collectionViewLayout as? UICollectionViewFlowLayout {
                 flow.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
                 flow.minimumInteritemSpacing = 8
@@ -54,135 +58,54 @@ final class ProfileViewController: UIViewController {
                 flow.sectionInset = .zero
                 flow.scrollDirection = .vertical
             }
+            // Let outer scroll view handle scrolling for tags
+            cv.isScrollEnabled = false
         }
 
-        Task { await loadProfile() }
+        // ---- Portfolio collection (cards) ----
+        if let pvc = portfolioCollectionView {
+            pvc.dataSource = self
+            pvc.delegate   = self
+            pvc.backgroundColor = .clear
+            pvc.register(PortfolioCardCell.self,
+                         forCellWithReuseIdentifier: Self.portfolioReuseID)
+
+            if let flow = pvc.collectionViewLayout as? UICollectionViewFlowLayout {
+                let spacing: CGFloat = 12
+                flow.sectionInset = .zero
+                flow.minimumInteritemSpacing = spacing
+                flow.minimumLineSpacing = spacing
+                flow.estimatedItemSize = .zero
+            }
+
+            // Breathe a bit inside the page
+            pvc.contentInset = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+
+            // ✅ Make the portfolio grid itself scrollable
+            pvc.isScrollEnabled = true
+        }
+
+        Task { await loadProfile(); await fetchPortfolios() }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        Task { await loadProfile() }
+        Task { await loadProfile(); await fetchPortfolios() }
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateTagsHeight()
+        updatePortfoliosHeight()
     }
 
+    // MARK: - Actions
     @IBAction private func editProfileTapped(_ sender: UIButton) {
         let vc = EditProfileViewController()
         vc.delegate = self
         present(UINavigationController(rootViewController: vc), animated: true)
     }
 
-    // MARK: - Data / UI
-    private func defaultRoleText(from raw: String?) -> String {
-        guard let raw, !raw.isEmpty else { return "media creator" }
-        return raw
-    }
-    private func defaultBio(_ text: String?) -> String {
-        let t = (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return t.isEmpty ? "No bio yet." : t
-    }
-
-    private func applyUI(name: String,
-                         role: String,
-                         location: String?,
-                         website: String?,
-                         bio: String?,
-                         photoURL: String?,
-                         tags: [String]) async {
-
-        nameLabel.text = name
-        roleLabel.text = defaultRoleText(from: role)
-        locationLabel.text = (location?.isEmpty == false) ? location : "—"
-        bioBodyLabel.text = defaultBio(bio)
-
-        if let website, !website.isEmpty {
-            websiteButton.setTitle(website, for: .normal)
-            websiteButton.isHidden = false
-        } else {
-            websiteButton.setTitle(nil, for: .normal)
-            websiteButton.isHidden = true
-        }
-
-        self.tags = tags
-        await MainActor.run {
-            tagsCollectionView?.reloadData()
-            updateTagsHeight()
-        }
-
-        if let photoURL, let url = URL(string: photoURL) {
-            await loadAvatar(from: url)
-        }
-    }
-
-    private func loadProfile() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        do {
-            let snap = try await db.collection("users").document(uid).getDocument()
-            let data = snap.data() ?? [:]
-
-            let name     = data["displayName"] as? String ?? "User"
-            let role     = data["role"] as? String ?? "media creator"
-            let location = data["location"] as? String
-            let website  = data["website"] as? String
-            let bio      = data["bio"] as? String
-            let photoURL = data["photoURL"] as? String
-            let tags     = (data["tags"] as? [String]) ?? []
-
-            await applyUI(name: name,
-                          role: role,
-                          location: location,
-                          website: website,
-                          bio: bio,
-                          photoURL: photoURL,
-                          tags: tags)
-        } catch {
-            await MainActor.run { self.showError("Failed to load profile", error) }
-        }
-    }
-
-    // MARK: - Tags layout helpers
-    @MainActor
-    private func updateTagsHeight() {
-        guard let cv = tagsCollectionView else { return }
-        // If you didn’t wire tagsCollectionHeight, just bail (cv can scroll).
-        guard tagsCollectionHeight != nil || programmaticTagsHeight != nil else { return }
-
-        cv.layoutIfNeeded()
-        let h = max(cv.collectionViewLayout.collectionViewContentSize.height, 1)
-
-        if let outlet = tagsCollectionHeight {
-            outlet.constant = h
-        } else {
-            if programmaticTagsHeight == nil {
-                let c = cv.heightAnchor.constraint(equalToConstant: h)
-                c.priority = .defaultHigh
-                c.isActive = true
-                programmaticTagsHeight = c
-            } else {
-                programmaticTagsHeight?.constant = h
-            }
-        }
-        view.layoutIfNeeded()
-    }
-
-    // MARK: - Avatar
-    private func loadAvatar(from url: URL) async {
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            if let img = UIImage(data: data) {
-                await MainActor.run { self.avatarImageView.image = img }
-            } else {
-                await MainActor.run { self.avatarImageView.image = UIImage(systemName: "person.circle.fill") }
-            }
-        } catch {
-            await MainActor.run { self.avatarImageView.image = UIImage(systemName: "person.circle.fill") }
-        }
-    }
-
-    // MARK: - Website action
     @IBAction private func websiteTapped(_ sender: UIButton) {
         guard let title = sender.title(for: .normal),
               let url = URL(string: title),
@@ -190,40 +113,117 @@ final class ProfileViewController: UIViewController {
         UIApplication.shared.open(url)
     }
 
-    // MARK: - Error UI
-    @MainActor
-    private func showError(_ title: String, _ error: Error) {
-        let ac = UIAlertController(title: title, message: error.localizedDescription, preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .default))
-        present(ac, animated: true)
+    @IBAction private func portfolioTapped(_ sender: UIButton) {
+        let editor = PortfolioEditorViewController()
+        let nav = UINavigationController(rootViewController: editor)
+        nav.modalPresentationStyle = .formSheet
+        present(nav, animated: true)
+    }
+
+    // MARK: - Data loading
+    private func loadProfile() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        do {
+            let doc = try await db.collection("users").document(uid).getDocument()
+            guard let data = doc.data() else { return }
+
+            let displayName = data["displayName"] as? String ?? ""
+            let role        = data["role"] as? String ?? ""
+            let location    = data["location"] as? String ?? ""
+            let website     = data["website"] as? String ?? ""
+            let bio         = (data["bio"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let photoURL    = data["photoURL"] as? String
+            let tags        = data["tags"] as? [String] ?? []
+
+            await MainActor.run {
+                self.nameLabel.text = displayName.isEmpty ? "—" : displayName
+                self.roleLabel.text = role.isEmpty ? "media creator" : role
+                self.locationLabel.text = location.isEmpty ? "—" : location
+
+                if website.isEmpty {
+                    self.websiteButton.setTitle(nil, for: .normal)
+                    self.websiteButton.isHidden = true
+                } else {
+                    self.websiteButton.setTitle(website, for: .normal)
+                    self.websiteButton.isHidden = false
+                }
+
+                self.bioBodyLabel.text = bio.isEmpty ? "No bio yet." : bio
+
+                self.tags = tags
+                self.tagsCollectionView?.reloadData()
+                self.updateTagsHeight()
+            }
+
+            if let s = photoURL, let url = URL(string: s) {
+                await loadAvatar(from: url)
+            }
+        } catch {
+            print("Profile load error: \(error)")
+        }
+    }
+
+    private func fetchPortfolios() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        do {
+            let snap = try await db.collection("users").document(uid)
+                .collection("portfolios")
+                .order(by: "createdAt", descending: true)
+                .getDocuments()
+            let items = snap.documents.compactMap { PortfolioItem(doc: $0) }
+            await MainActor.run {
+                self.portfolioItems = items
+                self.portfolioCollectionView?.reloadData()
+                self.updatePortfoliosHeight()
+            }
+        } catch {
+            print("Portfolios fetch error: \(error)")
+        }
+    }
+
+    private func loadAvatar(from url: URL) async {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let img = UIImage(data: data) {
+                await MainActor.run { self.avatarImageView.image = img }
+            }
+        } catch { /* ignore */ }
+    }
+
+    // MARK: - Dynamic heights
+    private func updateTagsHeight() {
+        guard let cv = tagsCollectionView, let h = tagsHeightConstraint else { return }
+        cv.collectionViewLayout.invalidateLayout()
+        cv.layoutIfNeeded()
+        h.constant = cv.collectionViewLayout.collectionViewContentSize.height
+        view.layoutIfNeeded()
+    }
+
+    private func updatePortfoliosHeight() {
+        // Instead of matching content height, size to visible space so the collection view can scroll internally.
+        guard let cv = portfolioCollectionView, let h = portfolioHeightConstraint else { return }
+
+        // Force the latest frames before measuring
+        view.layoutIfNeeded()
+        cv.collectionViewLayout.invalidateLayout()
+        cv.layoutIfNeeded()
+
+        // Calculate available vertical space from the top of the portfolio grid to the safe-area bottom.
+        let bottomInset = view.safeAreaInsets.bottom
+        let available = view.bounds.height - cv.frame.minY - bottomInset - 12
+
+        if available.isFinite, available > 0 {
+            h.constant = available
+            view.layoutIfNeeded()
+        } else if h.constant == 0 {
+            // Fallback height if layout hasn’t resolved yet
+            h.constant = 300
+            view.layoutIfNeeded()
+        }
     }
 }
 
-// MARK: - Collection View
-extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        tags.count
-    }
-
-    func collectionView(_ collectionView: UICollectionView,
-                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: Self.pillReuseID,
-            for: indexPath
-        ) as! PillCell
-        cell.configure(text: tags[indexPath.item])
-        return cell
-    }
-}
-
-// MARK: - Edit Profile delegate
-extension ProfileViewController: ProfileEditingDelegate {
-    func editProfileViewControllerDidSave() {
-        Task { await loadProfile() }
-    }
-}
-
-// MARK: - Programmatic pill cell (no storyboard prototype required)
+// MARK: - Pill cell (tags)
 private final class PillCell: UICollectionViewCell {
     private let label = UILabel()
 
@@ -237,6 +237,7 @@ private final class PillCell: UICollectionViewCell {
         label.font = .systemFont(ofSize: 14, weight: .semibold)
         label.textColor = .label
         label.textAlignment = .center
+
         contentView.addSubview(label)
         NSLayoutConstraint.activate([
             label.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
@@ -247,6 +248,75 @@ private final class PillCell: UICollectionViewCell {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
     func configure(text: String) { label.text = text }
+}
+
+// MARK: - UICollectionView DataSource & Delegate
+extension ProfileViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+
+    func numberOfSections(in collectionView: UICollectionView) -> Int { 1 }
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if collectionView == tagsCollectionView {
+            return tags.count
+        } else if collectionView == portfolioCollectionView {
+            return portfolioItems.count
+        }
+        return 0
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if collectionView == tagsCollectionView {
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: Self.pillReuseID,
+                for: indexPath
+            ) as! PillCell
+            cell.configure(text: tags[indexPath.item])
+            return cell
+        } else {
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: Self.portfolioReuseID,
+                for: indexPath
+            ) as! PortfolioCardCell
+            cell.configure(with: portfolioItems[indexPath.item])
+            return cell
+        }
+    }
+
+    // 2-column grid for portfolio cards; pills use automatic sizing
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        sizeForItemAt indexPath: IndexPath) -> CGSize {
+
+        if collectionView == tagsCollectionView {
+            // auto-sized via estimatedItemSize; a small fallback is fine
+            return CGSize(width: 50, height: 30)
+        }
+
+        // ---- Portfolio grid (2 columns) ----
+        let spacing: CGFloat = 12
+        let insets = collectionView.contentInset
+        let width = collectionView.bounds.width - insets.left - insets.right
+        let columns: CGFloat = 2
+        let totalSpacing = spacing * (columns - 1)
+        let itemW = floor((width - totalSpacing) / columns)
+        // Tall enough for title + subtitle (and your future skill line)
+        return CGSize(width: itemW, height: 130)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard collectionView == portfolioCollectionView else { return }
+        let item = portfolioItems[indexPath.item]
+        let editor = ProjectCardEditorViewController(itemToEdit: item)
+        editor.onSave = { [weak self] in Task { await self?.fetchPortfolios() } }
+        present(UINavigationController(rootViewController: editor), animated: true)
+    }
+}
+
+// MARK: - Edit profile delegate (refresh)
+extension ProfileViewController: ProfileEditingDelegate {
+    func editProfileViewControllerDidSave() {
+        Task { await loadProfile(); await fetchPortfolios() }
+    }
 }
