@@ -2,25 +2,34 @@
 //  LikesRepository.swift
 //  FIT3178-App
 //
-//  Created by Ramiro Flores Villarreal on 10/11/25.
+//  Manages "likes" between users and creates a direct chat on mutual like.
+//  Contains read/write helpers and a listener for my liked IDs.
 //
 
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+/// Repository for like-related operations and mutual-match chat creation.
 final class LikesRepository {
+
+    // MARK: - Dependencies
     private let fs = FirebaseService.shared
     private let auth = Auth.auth()
 
-    // MARK: - Public: Observe my liked IDs
+    // MARK: - Observing
+
+    /// Observes my liked user IDs (documents under `/users/{me}/likes/*`).
+    /// - Returns: An optional listener registration (nil if not signed in).
     func observeMyLikedIDs(onChange: @escaping (Set<String>) -> Void) -> ListenerRegistration? {
         guard let uid = auth.currentUser?.uid else {
             print("❌ [LikesRepo] observeMyLikedIDs: no signed-in user.")
             return nil
         }
+
         let ref = fs.users.document(uid).collection("likes")
         print("🔎 [LikesRepo] Listening to \(ref.path)")
+
         return ref.addSnapshotListener { qs, err in
             if let err = err {
                 print("❌ [LikesRepo] likes snapshot error:", err)
@@ -32,12 +41,15 @@ final class LikesRepository {
         }
     }
 
-    // MARK: - Public: Write a like (and create chat if matched)
+    // MARK: - Write
+
+    /// Writes a "like" for `likedUid`. If mutual, ensures a direct chat exists.
     func like(user likedUid: String) async {
         guard let myUid = auth.currentUser?.uid else {
             print("❌ [LikesRepo] like(\(likedUid)) aborted: no signed-in user.")
             return
         }
+
         let doc = fs.users.document(myUid).collection("likes").document(likedUid)
         print("➡️  [LikesRepo] Try write like: \(myUid) → \(likedUid) at \(doc.path)")
 
@@ -49,7 +61,7 @@ final class LikesRepository {
             ], merge: true)
             print("✅ [LikesRepo] Like saved OK at \(doc.path)")
 
-            // Verify we can read back this doc
+            // Optional: verify we can read it back (useful for rule debugging)
             do {
                 let snap = try await doc.getDocument()
                 print("🧪 [LikesRepo] Read-back exists?", snap.exists, "data:", snap.data() ?? [:])
@@ -58,7 +70,7 @@ final class LikesRepository {
                 print("❌ [LikesRepo] Read-back FAILED (\(ns.domain)/\(ns.code)):", ns.localizedDescription)
             }
 
-            // check mutual
+            // Mutual check: did they like me?
             let otherDoc = fs.users.document(likedUid).collection("likes").document(myUid)
             let theyLikedMe = try await otherDoc.getDocument().exists
             print("🔁 [LikesRepo] Mutual check \(otherDoc.path) exists? \(theyLikedMe)")
@@ -75,16 +87,19 @@ final class LikesRepository {
         }
     }
 
-    // MARK: - Private: ensure chat
+    // MARK: - Private Helpers
+
+    /// Ensures a direct chat exists between two users; creates one if not.
     private func ensureDirectChat(between a: String, and b: String) async throws {
         print("💬 [LikesRepo] Ensure direct chat between \(a) & \(b)")
+
         let qs = try await fs.chats
             .whereField("participants", arrayContains: a)
             .getDocuments()
 
         let existing = qs.documents.first { doc in
             let parts = (doc["participants"] as? [String]) ?? []
-            return parts.count == 2 && Set(parts) == Set([a,b])
+            return parts.count == 2 && Set(parts) == Set([a, b])
         }
 
         if let doc = existing {
@@ -93,7 +108,7 @@ final class LikesRepository {
         }
 
         let data: [String: Any] = [
-            "participants": [a,b],
+            "participants": [a, b],
             "isgroupchat": false,
             "lastmessage": "",
             "lastmessagetime": FieldValue.serverTimestamp(),

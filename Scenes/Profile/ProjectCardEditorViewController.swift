@@ -4,46 +4,62 @@
 //
 //  Created by Ramiro Flores Villarreal on 10/11/25.
 //
+//  Description:
+//  Editor for a single portfolio "project card". Supports creating a new entry
+//  or editing an existing one. Persists data in Firestore under
+//  users/{uid}/portfolios/{projectId}.
+//
+
 
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
+/// Modal editor for a portfolio project card (title, role, dates, description, skills).
 final class ProjectCardEditorViewController: UIViewController {
 
-    // callbacks
+    // MARK: - Callbacks
+
+    /// Invoked after a successful save, so caller can refresh lists.
     var onSave: (() -> Void)?
 
-    // if editing:
+    // MARK: - Editing State
+
+    /// Non-nil when editing an existing project.
     private var existing: PortfolioItem?
 
-    // UI
+    // MARK: - UI
+
     private let scroll = UIScrollView()
-    private let stack = UIStackView()
+    private let stack  = UIStackView()
 
     private let titleField = field("Project title")
     private let roleField  = field("Your role")
+
     private let descView: UITextView = {
         let v = UITextView()
         v.font = .systemFont(ofSize: 16)
         v.layer.cornerRadius = 12
         v.backgroundColor = UIColor(named: "BrandSecondary") ?? .secondarySystemGroupedBackground
         v.heightAnchor.constraint(equalToConstant: 140).isActive = true
-        v.textContainerInset = .init(top: 10, left: 12, bottom: 10, right: 12)
+        v.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
         return v
     }()
+
     private let startPicker: UIDatePicker = {
         let p = UIDatePicker()
         p.datePickerMode = .date
         p.preferredDatePickerStyle = .compact
         return p
     }()
+
     private let endPicker: UIDatePicker = {
         let p = UIDatePicker()
         p.datePickerMode = .date
         p.preferredDatePickerStyle = .compact
         return p
     }()
+
     private let skillsField = field("Skills (comma-separated)")
 
     private let saveButton: UIButton = {
@@ -57,27 +73,45 @@ final class ProjectCardEditorViewController: UIViewController {
         return b
     }()
 
+    // MARK: - Firebase
+
     private let db = Firestore.firestore()
     private var uid: String? { Auth.auth().currentUser?.uid }
 
-    // MARK: - Init
+    // MARK: - Initializers
+
+    /// Convenience init to open the editor pre-populated with an existing item.
     convenience init(itemToEdit: PortfolioItem) {
         self.init()
         self.existing = itemToEdit
     }
 
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
+
         title = existing == nil ? "New Project" : "Edit Project"
         view.backgroundColor = UIColor(named: "Background2") ?? .systemGroupedBackground
-        navigationItem.leftBarButtonItem = .init(barButtonSystemItem: .close, target: self, action: #selector(close))
+        navigationItem.leftBarButtonItem = .init(
+            barButtonSystemItem: .close,
+            target: self,
+            action: #selector(close)
+        )
 
-        build()
-        if let e = existing { populate(from: e) }
+        buildUI()
+
+        if let e = existing {
+            populate(from: e)
+        }
+
         saveButton.addTarget(self, action: #selector(save), for: .touchUpInside)
     }
 
-    private func build() {
+    // MARK: - UI Construction
+
+    /// Builds and lays out the editor UI.
+    private func buildUI() {
         view.addSubview(scroll)
         scroll.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -90,9 +124,10 @@ final class ProjectCardEditorViewController: UIViewController {
         stack.axis = .vertical
         stack.spacing = 14
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.layoutMargins = .init(top: 20, left: 20, bottom: 24, right: 20)
+        stack.layoutMargins = UIEdgeInsets(top: 20, left: 20, bottom: 24, right: 20)
         scroll.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
@@ -101,25 +136,36 @@ final class ProjectCardEditorViewController: UIViewController {
             stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor)
         ])
 
+        // Fields
         stack.addArrangedSubview(label("Title"))
         stack.addArrangedSubview(titleField)
+
         stack.addArrangedSubview(label("Role"))
         stack.addArrangedSubview(roleField)
+
         stack.addArrangedSubview(label("Description"))
         stack.addArrangedSubview(descView)
 
-        let row = UIStackView(arrangedSubviews: [label("From"), startPicker, UIView(), label("To"), endPicker])
+        // Dates row
+        let row = UIStackView(arrangedSubviews: [
+            label("From"), startPicker,
+            UIView(), // flexible spacer
+            label("To"), endPicker
+        ])
         row.axis = .horizontal
-        row.spacing = 12
         row.alignment = .center
+        row.spacing = 12
         stack.addArrangedSubview(row)
 
+        // Skills
         stack.addArrangedSubview(label("Skills"))
         stack.addArrangedSubview(skillsField)
 
+        // Save button
         stack.addArrangedSubview(saveButton)
     }
 
+    /// Populates fields from an existing `PortfolioItem`.
     private func populate(from item: PortfolioItem) {
         titleField.text = item.title
         roleField.text  = item.role
@@ -130,23 +176,30 @@ final class ProjectCardEditorViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    /// Dismisses the editor without saving.
     @objc private func close() { dismiss(animated: true) }
 
+    /// Validates, then saves the project to Firestore using incremental merges.
     @objc private func save() {
         guard let uid = Auth.auth().currentUser?.uid else {
-            self.presentError(title: "Not signed in", message: "No authenticated user.")
+            presentError(title: "Not signed in", message: "No authenticated user.")
             return
         }
 
-        // Prepare values (force [String] not [Substring])
-        let title  = (titleField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let role   = (roleField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let desc   = (descView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        // Prepare values
+        let title = (titleField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let role  = (roleField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let desc  = (descView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Ensure [String] (not [Substring])
         let skills: [String] = (skillsField.text ?? "")
             .split(separator: ",")
             .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        let mediaURLs: [String] = [String]() // IMPORTANT: typed empty string array
+
+        let mediaURLs: [String] = [] // explicit empty array of String
+
         let startTs = Timestamp(date: startPicker.date)
         let endTs   = Timestamp(date: endPicker.date)
         let created = Timestamp(date: Date())
@@ -156,7 +209,7 @@ final class ProjectCardEditorViewController: UIViewController {
             if let existingId = existing?.id {
                 return colRef.document(existingId)
             } else {
-                return colRef.document() // create new with our chosen id
+                return colRef.document()
             }
         }()
 
@@ -164,7 +217,7 @@ final class ProjectCardEditorViewController: UIViewController {
         print("🔥 [STEP] UID:", uid)
 
         Task {
-            // Helper to run a merge and report which key failed
+            /// Helper that merges a single patch and reports rule failures precisely.
             func tryMerge(_ patch: [String: Any], label: String) async -> Bool {
                 print("🔥 [STEP] TRY:", label, "| PATCH:", patch.map { "\($0.key):\(type(of: $0.value))" }.joined(separator: ", "))
                 do {
@@ -184,10 +237,10 @@ final class ProjectCardEditorViewController: UIViewController {
                 }
             }
 
-            // 1) Ensure the doc exists (create path) with minimal required field
+            // 1) Ensure the doc exists with a title
             if !(await tryMerge(["title": title.isEmpty ? "Untitled" : title], label: "title")) { return }
 
-            // 2) Add other fields ONE BY ONE
+            // 2) Add remaining fields one by one (easier to diagnose rule failures)
             if !(await tryMerge(["role": role], label: "role")) { return }
             if !(await tryMerge(["description": desc], label: "description")) { return }
             if !(await tryMerge(["skills": skills], label: "skills (Array<String>)")) { return }
@@ -196,7 +249,7 @@ final class ProjectCardEditorViewController: UIViewController {
             if !(await tryMerge(["endDate": endTs], label: "endDate (Timestamp)")) { return }
             if !(await tryMerge(["createdAt": created], label: "createdAt (Timestamp)")) { return }
 
-            // All fields accepted
+            // Success
             await MainActor.run {
                 self.onSave?()
                 self.dismiss(animated: true)
@@ -204,15 +257,15 @@ final class ProjectCardEditorViewController: UIViewController {
         }
     }
 
+    // MARK: - Debug / Alerts
 
-    // MARK: - Debug helpers
+    /// Prints a key/value dump with types — useful for diagnosing rule failures.
     private func debugDumpPayload(_ dict: [String: Any]) {
         print("🔥 [PORTFOLIO] PAYLOAD DUMP:")
-        dict.forEach { (k, v) in
-            print("   -", k, "=", v, "| TYPE:", type(of: v))
-        }
+        dict.forEach { k, v in print("   -", k, "=", v, "| TYPE:", type(of: v)) }
     }
 
+    /// Presents a simple alert with title and message.
     private func presentError(title: String, message: String) {
         let ac = UIAlertController(title: title, message: message, preferredStyle: .alert)
         ac.addAction(.init(title: "OK", style: .default))
@@ -220,17 +273,21 @@ final class ProjectCardEditorViewController: UIViewController {
     }
 }
 
-// UI helpers
+// MARK: - UI Helpers (unchanged)
+
+/// Creates a styled text field with padding and rounded corners.
 private func field(_ ph: String) -> UITextField {
     let tf = UITextField()
     tf.placeholder = ph
     tf.backgroundColor = UIColor(named: "BrandSecondary") ?? .secondarySystemGroupedBackground
     tf.layer.cornerRadius = 12
-    tf.leftView = UIView(frame: .init(x: 0, y: 0, width: 12, height: 1))
+    tf.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
     tf.leftViewMode = .always
     tf.heightAnchor.constraint(equalToConstant: 48).isActive = true
     return tf
 }
+
+/// Creates a small, semibold secondary label used as a field title.
 private func label(_ text: String) -> UILabel {
     let l = UILabel()
     l.text = text

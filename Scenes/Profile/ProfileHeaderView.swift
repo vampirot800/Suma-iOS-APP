@@ -4,47 +4,54 @@
 //
 //  Created by Ramiro Flores Villarreal on 21/10/25.
 //
+//  Description:
+//  Displays the user’s avatar, name, and role at the top of the profile.
+//  Includes action buttons for editing the profile and viewing portfolios.
+//
 
 import UIKit
 
 @IBDesignable
 final class ProfileHeaderView: UIView {
 
+    // MARK: - UI Components
     private let avatar = UIImageView()
     private let nameLabel = UILabel()
     private let roleLabel = UILabel()
     private let editButton = UIButton(type: .system)
-    private let portfolioButton = UIButton(type: .system)
     private let hStack = UIStackView()
 
-    /// Called when the pencil button is tapped
+    // MARK: - Callbacks
+    /// Triggered when the edit (pencil) button is tapped.
     var onEditTapped: (() -> Void)?
 
-    /// Called when the avatar image view is tapped
+    /// Triggered when the avatar image view is tapped.
     var onAvatarTapped: (() -> Void)?
-    
+
+    /// Triggered when the user wants to view their portfolio.
     var onPortfolioTapped: (() -> Void)?
-    
 
-
-    // Editable in Attributes Inspector for live IB preview
+    // MARK: - Inspectable IB Properties
     @IBInspectable var name: String = "Your Name" { didSet { nameLabel.text = name } }
     @IBInspectable var role: String = "media creator" { didSet { roleLabel.text = role } }
 
+    // MARK: - Initializers
     override init(frame: CGRect) {
         super.init(frame: frame)
-        commonInit()
+        setup()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        commonInit()
+        setup()
     }
 
-    private func commonInit() {
+    // MARK: - Setup
+    /// Configures all layout and subviews.
+    private func setup() {
         backgroundColor = .clear
 
-        // Avatar configuration
+        // Avatar
         avatar.image = UIImage(systemName: "person.crop.circle.fill")
         avatar.contentMode = .scaleAspectFill
         avatar.tintColor = .systemGray3
@@ -54,6 +61,8 @@ final class ProfileHeaderView: UIView {
         avatar.layer.cornerRadius = 42
         avatar.clipsToBounds = true
         avatar.isUserInteractionEnabled = true
+
+        // Tap gesture on avatar
         let tap = UITapGestureRecognizer(target: self, action: #selector(avatarTapped))
         avatar.addGestureRecognizer(tap)
 
@@ -62,7 +71,7 @@ final class ProfileHeaderView: UIView {
         roleLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
         roleLabel.textColor = .secondaryLabel
 
-        // Edit button
+        // Edit button configuration
         var cfg = UIButton.Configuration.plain()
         cfg.image = UIImage(systemName: "pencil.circle.fill")
         cfg.preferredSymbolConfigurationForImage = .init(pointSize: 24, weight: .regular)
@@ -70,7 +79,7 @@ final class ProfileHeaderView: UIView {
         editButton.tintColor = .systemBlue
         editButton.addTarget(self, action: #selector(editTapped), for: .touchUpInside)
 
-        // Stacks
+        // Stack setup
         let textStack = UIStackView(arrangedSubviews: [nameLabel, roleLabel])
         textStack.axis = .vertical
         textStack.spacing = 2
@@ -81,10 +90,11 @@ final class ProfileHeaderView: UIView {
         hStack.translatesAutoresizingMaskIntoConstraints = false
         hStack.addArrangedSubview(avatar)
         hStack.addArrangedSubview(textStack)
-        hStack.addArrangedSubview(UIView()) // spacer
+        hStack.addArrangedSubview(UIView()) // flexible spacer
         hStack.addArrangedSubview(editButton)
 
         addSubview(hStack)
+
         NSLayoutConstraint.activate([
             hStack.leadingAnchor.constraint(equalTo: leadingAnchor),
             hStack.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -93,15 +103,17 @@ final class ProfileHeaderView: UIView {
         ])
     }
 
-    // Call this to display an avatar image (e.g., after loading from network/storage)
+    // MARK: - Actions
+    @objc private func editTapped() { onEditTapped?() }
+    @objc private func avatarTapped() { onAvatarTapped?() }
+
+    // MARK: - Public Methods
+    /// Updates the displayed avatar image.
     func setAvatarImage(_ image: UIImage?) {
         avatar.image = image ?? UIImage(systemName: "person.crop.circle.fill")
     }
 
-    @objc private func editTapped() { onEditTapped?() }
-
-    @objc private func avatarTapped() { onAvatarTapped?() }
-
+    // MARK: - Overrides
     override var intrinsicContentSize: CGSize {
         CGSize(width: UIView.noIntrinsicMetric, height: 110)
     }
@@ -113,6 +125,7 @@ final class ProfileHeaderView: UIView {
     }
 }
 
+// MARK: - UIFont Convenience
 private extension UIFont {
     func bold() -> UIFont { UIFont.systemFont(ofSize: pointSize, weight: .semibold) }
 }

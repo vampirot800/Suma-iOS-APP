@@ -59,11 +59,6 @@ enum Theme {
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UINavigationBar.appearance().compactAppearance = nav
 
-        // We intentionally do NOT set:
-        // - UIView.appearance().tintColor
-        // - UINavigationBar/UITabBar background colors or tints
-        // - Any label colors
-        // Colors are owned by screens/components or Asset Catalog.
     }
 }
 

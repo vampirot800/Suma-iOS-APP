@@ -2,19 +2,21 @@
 //  SwipeCardView.swift
 //  FIT3178-App
 //
-//  Figma-ready profile card:
-//  - 16:9 header image
-//  - Name + role
-//  - Meta row: location + website
-//  - Bio (multiline)
-//  - Tag chips
-//  - Bottom-right "View CV" button (only if cvURL present)
+//  Created by Ramiro Flores Villarreal on 11/11/25.
+//
+//  Description:
+//  A reusable profile card view designed for swipe-style interfaces.
+//  Displays a candidate’s image, name, role, metadata, bio, and tags,
+//  with an optional “View CV” button when a CV URL is available.
+//
 
 import UIKit
 
-// MARK: - View model
+// MARK: - Candidate View Model
+
+/// Represents the data model for a candidate card displayed in the swipe interface.
 public struct CandidateVM {
-    public let userId: String          // <-- NEW
+    public let userId: String
     public let name: String
     public let subtitle: String
     public let tags: [String]
@@ -26,17 +28,19 @@ public struct CandidateVM {
     public let website: String?
     public let location: String?
 
-    public init(userId: String,
-                name: String,
-                subtitle: String,
-                tags: [String],
-                imageURL: URL?,
-                role: String?,
-                bio: String?,
-                cvURL: URL?,
-                website: String? = nil,
-                location: String? = nil,
-                placeholder: UIImage? = nil) {
+    public init(
+        userId: String,
+        name: String,
+        subtitle: String,
+        tags: [String],
+        imageURL: URL?,
+        role: String?,
+        bio: String?,
+        cvURL: URL?,
+        website: String? = nil,
+        location: String? = nil,
+        placeholder: UIImage? = nil
+    ) {
         self.userId = userId
         self.name = name
         self.subtitle = subtitle
@@ -51,8 +55,9 @@ public struct CandidateVM {
     }
 }
 
+// MARK: - Font Utility
 
-// MARK: - Inter font utility
+/// Utility enum to safely load the Inter font family or fallback to system fonts.
 private enum InterFont {
     static func regular(_ size: CGFloat) -> UIFont {
         UIFont(name: "Inter-Regular", size: size) ?? .systemFont(ofSize: size)
@@ -65,9 +70,14 @@ private enum InterFont {
     }
 }
 
+// MARK: - Swipe Card View
+
+/// Displays a candidate’s profile in a Figma-like 16:9 card layout.
+/// Includes header image, metadata, bio, tags, and CV button.
 public final class SwipeCardView: UIView {
 
-    // MARK: - Layout constants
+    // MARK: - Layout Constants
+
     private struct Layout {
         static let corner: CGFloat = 20
         static let shadowOpacity: Float = 0.16
@@ -78,16 +88,16 @@ public final class SwipeCardView: UIView {
         static let imageCorner: CGFloat = 12
         static let titleSpacing: CGFloat = 6
         static let metaSpacing: CGFloat = 10
-        static let chipsTop: CGFloat = 10
         static let chipSpacing: CGFloat = 8
         static let bottomPadding: CGFloat = 16
         static let tagLineSpacing: CGFloat = 8
-        static let cvHeight: CGFloat = 46 // 8pt smaller than the 54 you had
+        static let cvHeight: CGFloat = 46
     }
 
     private static let imageCache = NSCache<NSURL, UIImage>()
 
-    // MARK: - Views
+    // MARK: - UI Components
+
     private let container = UIStackView()
     private let imageView = UIImageView()
     private let contentStack = UIStackView()
@@ -106,20 +116,21 @@ public final class SwipeCardView: UIView {
 
     private let bioLabel = UILabel()
 
-    // Tags + CV
-    private let tagsBlock = UIStackView()            // vertical: multiple lines
-    private let firstLine = UIStackView()            // tags + spacer + CV (right side)
-    private let firstLineTags = UIStackView()        // tags that fit on first line (before CV)
+    // Tags and CV button
+    private let tagsBlock = UIStackView()
+    private let firstLine = UIStackView()
+    private let firstLineTags = UIStackView()
     private let lineSpacer = UIView()
     private let cvButton = UIButton(type: .system)
 
-    private var extraTagLines: [UIStackView] = []    // additional wrapped lines
-    private var allChipViews: [ChipLabel] = []       // chips for measurement & reuse
+    private var extraTagLines: [UIStackView] = []
+    private var allChipViews: [ChipLabel] = []
 
     private var currentVM: CandidateVM?
     private var lastWidth: CGFloat = 0
 
-    // MARK: - Init
+    // MARK: - Initialization
+
     public convenience init(vm: CandidateVM) {
         self.init(frame: .zero)
         apply(vm: vm)
@@ -135,41 +146,73 @@ public final class SwipeCardView: UIView {
         buildUI()
     }
 
-    // MARK: - Build UI
+    // MARK: - UI Construction
+
+    /// Builds and arranges all subviews for the card layout.
     private func buildUI() {
         backgroundColor = UIColor(named: "sumaWhite")
         layer.cornerRadius = Layout.corner
-        layer.masksToBounds = false
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = Layout.shadowOpacity
         layer.shadowRadius = Layout.shadowRadius
         layer.shadowOffset = Layout.shadowOffset
 
-        // Header image (16:9)
+        // Header image
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = Layout.imageCorner
         imageView.backgroundColor = UIColor(named: "Header")?.withAlphaComponent(0.15)
-        imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor,
-                                          multiplier: 9.0/16.0).isActive = true
+        imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 9.0 / 16.0).isActive = true
 
-        // Title / Subtitle
+        // Title and subtitle
         nameLabel.font = InterFont.bold(24)
-        nameLabel.textColor = UIColor(named: "Surface")  // username color
-        nameLabel.numberOfLines = 1
-
+        nameLabel.textColor = UIColor(named: "Surface")
         subtitleLabel.font = InterFont.regular(16)
         subtitleLabel.textColor = UIColor(named: "TextSecondary")
         subtitleLabel.numberOfLines = 2
 
-        // Meta rows
+        // Meta rows (location + website)
+        setupMetaRows()
+
+        // Bio
+        bioLabel.font = InterFont.regular(16)
+        bioLabel.textColor = UIColor(named: "Surface")
+        bioLabel.numberOfLines = 4
+
+        // Tags and CV button
+        setupTagsBlock()
+
+        // Container stack
+        container.axis = .vertical
+        container.alignment = .fill
+        container.spacing = Layout.vPad
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(container)
+        container.addArrangedSubview(imageView)
+        container.addArrangedSubview(contentStack)
+
+        // Main content
+        contentStack.axis = .vertical
+        contentStack.spacing = Layout.titleSpacing
+        contentStack.addArrangedSubview(nameLabel)
+        contentStack.addArrangedSubview(subtitleLabel)
+        contentStack.addArrangedSubview(metaRow)
+        contentStack.addArrangedSubview(bioLabel)
+        contentStack.addArrangedSubview(tagsBlock)
+
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Layout.hPad),
+            container.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Layout.hPad),
+            container.topAnchor.constraint(equalTo: topAnchor, constant: Layout.vPad),
+            container.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -Layout.bottomPadding)
+        ])
+    }
+
+    /// Configures the meta row stack views for location and website.
+    private func setupMetaRows() {
         locationIcon.tintColor = UIColor(named: "TextSecondary")
         locationIcon.contentMode = .scaleAspectFit
-        NSLayoutConstraint.activate([
-            locationIcon.widthAnchor.constraint(equalToConstant: 18),
-            locationIcon.heightAnchor.constraint(equalToConstant: 18)
-        ])
-
         locationLabel.font = InterFont.regular(14)
         locationLabel.textColor = UIColor(named: "TextSecondary")
 
@@ -181,11 +224,6 @@ public final class SwipeCardView: UIView {
 
         websiteIcon.tintColor = UIColor(named: "TextSecondary")
         websiteIcon.contentMode = .scaleAspectFit
-        NSLayoutConstraint.activate([
-            websiteIcon.widthAnchor.constraint(equalToConstant: 18),
-            websiteIcon.heightAnchor.constraint(equalToConstant: 18)
-        ])
-
         websiteButton.setTitleColor(UIColor(named: "TextSecondary"), for: .normal)
         websiteButton.titleLabel?.font = InterFont.regular(14)
         websiteButton.contentHorizontalAlignment = .leading
@@ -202,19 +240,13 @@ public final class SwipeCardView: UIView {
         metaRow.spacing = Layout.metaSpacing
         metaRow.addArrangedSubview(locationRow)
         metaRow.addArrangedSubview(websiteRow)
+    }
 
-        // Bio
-        bioLabel.font = InterFont.regular(16)
-        bioLabel.textColor = UIColor(named: "Surface") // bio color
-        bioLabel.numberOfLines = 4
-
-        // --- Tags + View CV ---
-        // Vertical block that can host multiple lines
+    /// Configures the layout for tags and the “View CV” button.
+    private func setupTagsBlock() {
         tagsBlock.axis = .vertical
-        tagsBlock.alignment = .fill
         tagsBlock.spacing = Layout.tagLineSpacing
 
-        // First line: tags (left) + spacer + CV button (right)
         firstLine.axis = .horizontal
         firstLine.alignment = .center
         firstLine.spacing = Layout.chipSpacing
@@ -222,14 +254,11 @@ public final class SwipeCardView: UIView {
         firstLineTags.axis = .horizontal
         firstLineTags.alignment = .leading
         firstLineTags.spacing = Layout.chipSpacing
-
         firstLine.addArrangedSubview(firstLineTags)
         firstLine.addArrangedSubview(lineSpacer)
-        firstLine.setCustomSpacing(Layout.chipSpacing, after: firstLineTags)
 
-        // CV Button
+        // CV button setup
         cvButton.setTitle("View CV", for: .normal)
-        cvButton.setImage(nil, for: .normal) // remove icon
         cvButton.titleLabel?.font = InterFont.semibold(16)
         cvButton.setTitleColor(UIColor(named: "Background2"), for: .normal)
         cvButton.backgroundColor = UIColor(named: "Surface")
@@ -237,42 +266,16 @@ public final class SwipeCardView: UIView {
         cvButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 18, bottom: 10, right: 18)
         cvButton.heightAnchor.constraint(equalToConstant: Layout.cvHeight).isActive = true
         cvButton.addTarget(self, action: #selector(openCV), for: .touchUpInside)
+
         firstLine.addArrangedSubview(cvButton)
-
         tagsBlock.addArrangedSubview(firstLine)
-
-        // Main vertical content
-        contentStack.axis = .vertical
-        contentStack.alignment = .fill
-        contentStack.spacing = Layout.titleSpacing
-
-        container.axis = .vertical
-        container.alignment = .fill
-        container.spacing = Layout.vPad
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        addSubview(container)
-        container.addArrangedSubview(imageView)
-        container.addArrangedSubview(contentStack)
-
-        contentStack.addArrangedSubview(nameLabel)
-        contentStack.addArrangedSubview(subtitleLabel)
-        contentStack.addArrangedSubview(metaRow)
-        contentStack.addArrangedSubview(bioLabel)
-        contentStack.addArrangedSubview(tagsBlock)
-
-        NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Layout.hPad),
-            container.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Layout.hPad),
-            container.topAnchor.constraint(equalTo: topAnchor, constant: Layout.vPad),
-            container.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -Layout.bottomPadding)
-        ])
     }
 
-    // MARK: - Apply VM
+    // MARK: - View Model Application
+
+    /// Applies a candidate view model to update the card UI.
     public func apply(vm: CandidateVM) {
         currentVM = vm
-
         nameLabel.text = vm.name
         subtitleLabel.text = vm.subtitle
 
@@ -285,10 +288,8 @@ public final class SwipeCardView: UIView {
         bioLabel.text = vm.bio
         bioLabel.isHidden = (vm.bio ?? "").isEmpty
 
-        // Build chip views (we’ll place them into lines later)
+        // Build chip labels for tags
         allChipViews = vm.tags.map { ChipLabel(text: $0) }
-
-        // Reset lines now; final layout happens in layoutSubviews (when we know widths)
         rebuildTagLines(availableWidth: bounds.width)
 
         cvButton.isHidden = (vm.cvURL == nil)
@@ -306,50 +307,46 @@ public final class SwipeCardView: UIView {
         layoutIfNeeded()
     }
 
-    // Layout-time wrapping so the CV button sits at the right of the first line
+    // MARK: - Tag Layout Logic
+
     public override func layoutSubviews() {
         super.layoutSubviews()
-        let w = bounds.width
-        if abs(w - lastWidth) > 1 {
-            lastWidth = w
-            rebuildTagLines(availableWidth: w)
+        let width = bounds.width
+        if abs(width - lastWidth) > 1 {
+            lastWidth = width
+            rebuildTagLines(availableWidth: width)
         }
     }
 
+    /// Dynamically wraps tag chips into multiple lines based on width.
     private func rebuildTagLines(availableWidth: CGFloat) {
-        // Clear previous lines (except firstLine container)
         firstLineTags.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        extraTagLines.forEach { line in
-            tagsBlock.removeArrangedSubview(line)
-            line.removeFromSuperview()
-        }
+        extraTagLines.forEach { tagsBlock.removeArrangedSubview($0); $0.removeFromSuperview() }
         extraTagLines.removeAll()
 
-        // Early out if no chips
         guard !allChipViews.isEmpty else { return }
 
-        // Compute how many chips fit next to the CV button on the first line
         layoutIfNeeded()
         let cvWidth = cvButton.isHidden ? 0 : (cvButton.intrinsicContentSize.width + Layout.chipSpacing)
-        let horizontalPadding: CGFloat = Layout.hPad * 2  // safe approximation inside the card content
-        let usableFirstLine = max(0, availableWidth - horizontalPadding - cvWidth)
+        let padding: CGFloat = Layout.hPad * 2
+        let usableFirstLine = max(0, availableWidth - padding - cvWidth)
 
-        var currentLineWidth: CGFloat = 0
+        var currentWidth: CGFloat = 0
         var remainingChips = allChipViews
 
-        // First line: add chips until just before overflow
+        // Fill first line beside CV button
         while let chip = remainingChips.first {
             let chipWidth = chip.intrinsicContentSize.width
-            if currentLineWidth == 0 || currentLineWidth + Layout.chipSpacing + chipWidth <= usableFirstLine {
+            if currentWidth == 0 || currentWidth + Layout.chipSpacing + chipWidth <= usableFirstLine {
                 firstLineTags.addArrangedSubview(chip)
-                currentLineWidth += (currentLineWidth == 0 ? chipWidth : Layout.chipSpacing + chipWidth)
+                currentWidth += (currentWidth == 0 ? chipWidth : Layout.chipSpacing + chipWidth)
                 remainingChips.removeFirst()
             } else {
                 break
             }
         }
 
-        // Subsequent lines: full width (no CV button)
+        // Additional lines
         while !remainingChips.isEmpty {
             let line = UIStackView()
             line.axis = .horizontal
@@ -359,7 +356,7 @@ public final class SwipeCardView: UIView {
             var lineWidth: CGFloat = 0
             while let chip = remainingChips.first {
                 let chipWidth = chip.intrinsicContentSize.width
-                if lineWidth == 0 || lineWidth + Layout.chipSpacing + chipWidth <= (availableWidth - horizontalPadding) {
+                if lineWidth == 0 || lineWidth + Layout.chipSpacing + chipWidth <= (availableWidth - padding) {
                     line.addArrangedSubview(chip)
                     lineWidth += (lineWidth == 0 ? chipWidth : Layout.chipSpacing + chipWidth)
                     remainingChips.removeFirst()
@@ -367,11 +364,12 @@ public final class SwipeCardView: UIView {
                     break
                 }
             }
-
             extraTagLines.append(line)
             tagsBlock.addArrangedSubview(line)
         }
     }
+
+    // MARK: - Image Loading
 
     private func setImage(from url: URL) {
         if let cached = SwipeCardView.imageCache.object(forKey: url as NSURL) {
@@ -384,6 +382,8 @@ public final class SwipeCardView: UIView {
             DispatchQueue.main.async { self.imageView.image = img }
         }.resume()
     }
+
+    // MARK: - Actions
 
     @objc private func openCV() {
         guard let url = currentVM?.cvURL else { return }
@@ -398,23 +398,33 @@ public final class SwipeCardView: UIView {
     }
 }
 
-// MARK: - ChipLabel
+// MARK: - Chip Label
+
+/// Rounded label used as a tag chip within the card.
 private final class ChipLabel: UILabel {
     private let insets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
+
     init(text: String) {
         super.init(frame: .zero)
         self.text = text
         font = InterFont.semibold(14)
-        textColor = UIColor(named: "Surface")       // tag text color
-        backgroundColor = UIColor(named: "Accent2") // tag pill color
+        textColor = UIColor(named: "Surface")
+        backgroundColor = UIColor(named: "Accent2")
         layer.cornerRadius = 12
         layer.masksToBounds = true
     }
+
     required init?(coder: NSCoder) { super.init(coder: coder) }
-    override func drawText(in rect: CGRect) { super.drawText(in: rect.inset(by: insets)) }
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: insets))
+    }
+
     override var intrinsicContentSize: CGSize {
-        let b = super.intrinsicContentSize
-        return CGSize(width: b.width + insets.left + insets.right,
-                      height: b.height + insets.top + insets.bottom)
+        let base = super.intrinsicContentSize
+        return CGSize(
+            width: base.width + insets.left + insets.right,
+            height: base.height + insets.top + insets.bottom
+        )
     }
 }

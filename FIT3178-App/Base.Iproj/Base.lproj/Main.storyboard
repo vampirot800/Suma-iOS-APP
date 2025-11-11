@@ -34,52 +34,52 @@
                                 <rect key="frame" x="24" y="71" width="345" height="747"/>
                                 <subviews>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Set up your account " textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="C2v-DZ-BjT">
-                                        <rect key="frame" x="0.0" y="0.0" width="345" height="139"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="345" height="135.33333333333334"/>
                                         <color key="textColor" name="Surface"/>
                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="16"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="What is your name?" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RW8-Oq-0bn">
-                                        <rect key="frame" x="0.0" y="157" width="345" height="20.333333333333343"/>
+                                        <rect key="frame" x="0.0" y="153.33333333333334" width="345" height="20.333333333333343"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="sbD-7d-CtQ">
-                                        <rect key="frame" x="0.0" y="195.33333333333331" width="345" height="34"/>
+                                        <rect key="frame" x="0.0" y="191.66666666666669" width="345" height="34"/>
                                         <color key="backgroundColor" name="Secondary"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="What's your email?" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="KJO-Ee-5pS">
-                                        <rect key="frame" x="0.0" y="247.33333333333331" width="345" height="18"/>
+                                        <rect key="frame" x="0.0" y="243.66666666666669" width="345" height="18.666666666666686"/>
                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Email" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="E9J-Eb-7eV">
-                                        <rect key="frame" x="0.0" y="283.33333333333331" width="345" height="34"/>
+                                        <rect key="frame" x="0.0" y="280.33333333333331" width="345" height="34"/>
                                         <color key="backgroundColor" name="Secondary"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Choose a Password" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="RN9-ho-zEO">
-                                        <rect key="frame" x="0.0" y="335.33333333333331" width="345" height="18"/>
+                                        <rect key="frame" x="0.0" y="332.33333333333331" width="345" height="18.666666666666686"/>
                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Password" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="HM2-26-ANl">
-                                        <rect key="frame" x="0.0" y="371.33333333333331" width="345" height="34"/>
+                                        <rect key="frame" x="0.0" y="369" width="345" height="34"/>
                                         <color key="backgroundColor" name="Secondary"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Optional* (You can set these up later)" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="MDK-QC-yN2">
-                                        <rect key="frame" x="0.0" y="423.33333333333331" width="345" height="20.333333333333314"/>
+                                        <rect key="frame" x="0.0" y="421" width="345" height="21.333333333333314"/>
                                         <fontDescription key="fontDescription" name="Inter-Bold" family="Inter" pointSize="16"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <button opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1Lz-IO-hKx">
-                                        <rect key="frame" x="0.0" y="461.66666666666663" width="345" height="34.333333333333314"/>
+                                        <rect key="frame" x="0.0" y="460.33333333333337" width="345" height="34.333333333333314"/>
                                         <color key="tintColor" name="Header"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Choose tags"/>
@@ -88,18 +88,18 @@
                                         </connections>
                                     </button>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Write a Bio" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="YR1-TM-hcD">
-                                        <rect key="frame" x="0.0" y="514" width="345" height="18"/>
+                                        <rect key="frame" x="0.0" y="512.66666666666663" width="345" height="18.666666666666629"/>
                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Tell us something about yourself" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="2Vn-5w-ecZ">
-                                        <rect key="frame" x="0.0" y="550" width="345" height="34"/>
+                                        <rect key="frame" x="0.0" y="549.33333333333337" width="345" height="34"/>
                                         <color key="backgroundColor" name="Secondary"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="What role represents you?" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="b5e-a7-eY6">
-                                        <rect key="frame" x="0.0" y="602" width="345" height="18"/>
+                                        <rect key="frame" x="0.0" y="601.33333333333337" width="345" height="18.666666666666629"/>
                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
@@ -168,10 +168,10 @@
                                 <rect key="frame" x="0.0" y="118" width="393" height="666"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" restorationIdentifier="ContentView" translatesAutoresizingMaskIntoConstraints="NO" id="dU9-hD-O4B" customClass="contentView">
-                                        <rect key="frame" x="0.0" y="0.0" width="393" height="663.66666666666663"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="393" height="665.66666666666663"/>
                                         <subviews>
                                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="AGw-vU-FAA">
-                                                <rect key="frame" x="24" y="301.66666666666669" width="345" height="350.00000000000006"/>
+                                                <rect key="frame" x="24" y="303.66666666666669" width="345" height="350.00000000000006"/>
                                                 <color key="backgroundColor" name="Background2"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" priority="999" constant="350" id="dsw-vg-tKr"/>
@@ -234,7 +234,7 @@
                                                 </cells>
                                             </collectionView>
                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="iJn-S1-0n9">
-                                                <rect key="frame" x="16" y="12" width="361" height="277.66666666666669"/>
+                                                <rect key="frame" x="16" y="12" width="361" height="279.66666666666669"/>
                                                 <subviews>
                                                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="dX2-HB-Yt3" customClass="HeaderRow">
                                                         <rect key="frame" x="8" y="8" width="345" height="72"/>
@@ -248,16 +248,16 @@
                                                                 </constraints>
                                                             </imageView>
                                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="0b3-9U-wK3" customClass="HeaderTextStack">
-                                                                <rect key="frame" x="88" y="8.3333333333333464" width="257" height="55.333333333333343"/>
+                                                                <rect key="frame" x="88" y="7.3333333333333393" width="257" height="57.666666666666657"/>
                                                                 <subviews>
                                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="751" text="Test User 1" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KCM-Np-vbv" customClass="nameLabel">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="140.66666666666666" height="32.666666666666664"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="148" height="34"/>
                                                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="28"/>
                                                                         <nil key="textColor"/>
                                                                         <nil key="highlightedColor"/>
                                                                     </label>
                                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Media Creator" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Pf2-Nq-aiQ" customClass="roleLabel">
-                                                                        <rect key="frame" x="0.0" y="36.666666666666657" width="102" height="18.666666666666671"/>
+                                                                        <rect key="frame" x="0.0" y="38" width="107.66666666666667" height="19.666666666666671"/>
                                                                         <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="16"/>
                                                                         <color key="textColor" name="Surface"/>
                                                                         <nil key="highlightedColor"/>
@@ -267,25 +267,25 @@
                                                         </subviews>
                                                     </stackView>
                                                     <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="IBa-XX-BPO" customClass="MetaRows">
-                                                        <rect key="frame" x="8" y="95.999999999999986" width="345" height="173.66666666666663"/>
+                                                        <rect key="frame" x="8" y="95.999999999999986" width="345" height="175.66666666666663"/>
                                                         <subviews>
                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" text="Location" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZxL-2w-SmU">
-                                                                <rect key="frame" x="0.0" y="0.0" width="345" height="18.666666666666668"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="345" height="19.666666666666668"/>
                                                                 <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="16"/>
                                                                 <color key="textColor" name="TestSecondary"/>
                                                                 <nil key="highlightedColor"/>
                                                             </label>
                                                             <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ldb-39-Igk">
-                                                                <rect key="frame" x="0.0" y="26.666666666666657" width="345" height="19.333333333333329"/>
+                                                                <rect key="frame" x="0.0" y="27.666666666666657" width="345" height="18.333333333333329"/>
                                                                 <subviews>
                                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Website:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="puh-Xg-STl">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="61.666666666666664" height="19.333333333333332"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="65.666666666666671" height="18.333333333333332"/>
                                                                         <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="16"/>
                                                                         <color key="textColor" name="TestSecondary"/>
                                                                         <nil key="highlightedColor"/>
                                                                     </label>
                                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="leading" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="9SG-Pu-om4">
-                                                                        <rect key="frame" x="61.666666666666657" y="0.0" width="283.33333333333337" height="19.333333333333332"/>
+                                                                        <rect key="frame" x="65.666666666666657" y="0.0" width="279.33333333333337" height="18.333333333333332"/>
                                                                         <color key="tintColor" name="likeGreen"/>
                                                                         <state key="normal" title="Button"/>
                                                                         <buttonConfiguration key="configuration" style="plain" title="link" titleAlignment="leading">
@@ -298,13 +298,13 @@
                                                                 </subviews>
                                                             </stackView>
                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" text="bio " textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TBT-V7-X3G">
-                                                                <rect key="frame" x="0.0" y="54" width="345" height="21"/>
+                                                                <rect key="frame" x="0.0" y="54" width="345" height="22"/>
                                                                 <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="18"/>
                                                                 <color key="textColor" name="Surface"/>
                                                                 <nil key="highlightedColor"/>
                                                             </label>
                                                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="fH8-EO-hPX">
-                                                                <rect key="frame" x="0.0" y="83" width="345" height="50"/>
+                                                                <rect key="frame" x="0.0" y="84" width="345" height="50"/>
                                                                 <color key="backgroundColor" name="Background2"/>
                                                                 <constraints>
                                                                     <constraint firstAttribute="height" constant="50" id="PFZ-D8-9hP"/>
@@ -327,10 +327,10 @@
                                                                 </cells>
                                                             </collectionView>
                                                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="EJ3-JY-7f3">
-                                                                <rect key="frame" x="0.0" y="141" width="345" height="32.666666666666657"/>
+                                                                <rect key="frame" x="0.0" y="142" width="345" height="33.666666666666657"/>
                                                                 <subviews>
                                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="IBc-9c-7e0">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="166.66666666666666" height="32.666666666666664"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="166.66666666666666" height="33.666666666666664"/>
                                                                         <color key="backgroundColor" name="Surface"/>
                                                                         <color key="tintColor" name="BrandSecondary"/>
                                                                         <state key="normal" title="Button"/>
@@ -342,7 +342,7 @@
                                                                         </connections>
                                                                     </button>
                                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="TG7-Py-Pby">
-                                                                        <rect key="frame" x="178.66666666666663" y="0.0" width="166.33333333333337" height="32.666666666666664"/>
+                                                                        <rect key="frame" x="178.66666666666663" y="0.0" width="166.33333333333337" height="33.666666666666664"/>
                                                                         <color key="backgroundColor" name="Surface"/>
                                                                         <color key="tintColor" name="BrandSecondary"/>
                                                                         <state key="normal" title="Button"/>
@@ -425,21 +425,8 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="zUf-7Z-HoE">
-                                <rect key="frame" x="24" y="128" width="345" height="32"/>
-                                <color key="backgroundColor" name="Secondary"/>
-                                <segments>
-                                    <segment title="Inbox"/>
-                                    <segment title="Opportunities"/>
-                                </segments>
-                                <color key="tintColor" name="Surface"/>
-                                <color key="selectedSegmentTintColor" name="Background"/>
-                                <connections>
-                                    <action selector="segmentedChanged:" destination="dRk-K8-xen" eventType="valueChanged" id="3nB-ff-i0R"/>
-                                </connections>
-                            </segmentedControl>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="oM6-5C-wK2">
-                                <rect key="frame" x="24" y="171" width="345" height="453"/>
+                                <rect key="frame" x="24" y="138" width="345" height="486"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="separatorColor" name="Background2"/>
                                 <prototypes>
@@ -554,19 +541,15 @@
                             <constraint firstItem="3c9-9m-66W" firstAttribute="trailing" secondItem="oM6-5C-wK2" secondAttribute="trailing" constant="24" id="7su-4U-LSZ"/>
                             <constraint firstItem="oM6-5C-wK2" firstAttribute="leading" secondItem="3c9-9m-66W" secondAttribute="leading" constant="24" id="GTb-ps-zjF"/>
                             <constraint firstItem="3c9-9m-66W" firstAttribute="trailing" secondItem="q7R-oQ-zMy" secondAttribute="trailing" constant="24" id="MXp-22-lDa"/>
-                            <constraint firstItem="zUf-7Z-HoE" firstAttribute="leading" secondItem="3c9-9m-66W" secondAttribute="leading" constant="24" id="P4H-R2-Aiw"/>
-                            <constraint firstItem="oM6-5C-wK2" firstAttribute="top" secondItem="zUf-7Z-HoE" secondAttribute="bottom" constant="12" id="SJF-vu-oEw"/>
-                            <constraint firstItem="zUf-7Z-HoE" firstAttribute="top" secondItem="3c9-9m-66W" secondAttribute="top" constant="10" id="eVN-Tt-esC"/>
                             <constraint firstItem="3c9-9m-66W" firstAttribute="bottom" secondItem="q7R-oQ-zMy" secondAttribute="bottom" constant="12" id="gBr-P1-hWj"/>
+                            <constraint firstItem="oM6-5C-wK2" firstAttribute="top" secondItem="3c9-9m-66W" secondAttribute="top" constant="20" id="jSW-gp-dJi"/>
                             <constraint firstItem="q7R-oQ-zMy" firstAttribute="leading" secondItem="3c9-9m-66W" secondAttribute="leading" constant="24" id="m6Z-is-lya"/>
-                            <constraint firstItem="3c9-9m-66W" firstAttribute="trailing" secondItem="zUf-7Z-HoE" secondAttribute="trailing" constant="24" id="ziw-zf-IUb"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="RH8-ja-63m"/>
                     <connections>
                         <outlet property="ctaButton" destination="Jzh-BF-lx7" id="NLN-EM-hFl"/>
                         <outlet property="ctaCard" destination="q7R-oQ-zMy" id="yEv-PH-lUU"/>
-                        <outlet property="segmented" destination="zUf-7Z-HoE" id="DfK-8h-vcb"/>
                         <outlet property="tableView" destination="oM6-5C-wK2" id="90Z-rs-CkL"/>
                     </connections>
                 </viewController>

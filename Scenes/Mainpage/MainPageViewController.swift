@@ -2,9 +2,10 @@
 //  MainPageViewController.swift
 //  FIT3178-App
 //
-//  Storyboard-only version (no programmatic UI fallbacks)
 //  Live Firestore-backed cards (profiles)
 //
+// Added prints for console debugging
+
 
 import UIKit
 import FirebaseAuth
@@ -17,6 +18,8 @@ final class MainPageViewController: UIViewController {
     @IBOutlet private weak var deckView: UIView!
     @IBOutlet private weak var dislikeButton: UIButton!
     @IBOutlet private weak var likeButton: UIButton!
+    
+    @IBOutlet private weak var deckViewBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Data
     private var allCandidates: [CandidateVM] = []
@@ -41,6 +44,7 @@ final class MainPageViewController: UIViewController {
     private var portfolioCache: [String: [PortfolioItem]] = [:]
     // Which rows are expanded
     private var expandedIndexPaths = Set<IndexPath>()
+    
 
     // Empty-state message for "Portfolios"
     private var portfoliosEmptyView: UILabel = {
@@ -54,33 +58,50 @@ final class MainPageViewController: UIViewController {
         return lbl
     }()
 
+    // =======================
+    // MARK: - IDEAS (new)
+    // =======================
+    private var ideasTable = UITableView(frame: .zero, style: .plain)
+    private var ideas: [IdeaArticle] = []
+    private let ideaService = IdeaService()
+    private let ideasRefresh = UIRefreshControl()
+    private var originalDeckBottomConstant: CGFloat?
+
+    private lazy var ideasEmptyLabel: UILabel = {
+        let l = UILabel()
+        l.text = "No current trends available. Check back later."
+        l.font = .systemFont(ofSize: 16, weight: .semibold)
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        l.textColor = UIColor(named: "TextSecondary") ?? .secondaryLabel
+        l.translatesAutoresizingMaskIntoConstraints = false
+        return l
+    }()
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         print("════════ MAIN PAGE LOADED ════════")
-        print("🔐 currentUser:", Auth.auth().currentUser?.uid ?? "nil")
-
-        print("🔌 outlets — segmentedControl:", segmentedControl as Any,
-              "deckView:", deckView as Any,
-              "likeButton:", likeButton as Any,
-              "dislikeButton:", dislikeButton as Any)
 
         if segmentedControl.selectedSegmentIndex != 0 {
             segmentedControl.selectedSegmentIndex = 0
         }
 
         buildPortfoliosCollection()
+        buildIdeasTable()
 
-        print("▶️ Calling observeMyLikes() …")
         observeMyLikes()
         debugProbeMyLikesRead()
-
         fetchUsersFromFirestore()
+
+        // 🔄 Load real trends
+        loadIdeasFromAPI()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         hideNavBar()
+        applyCurrentInsetsForIdeas()
     }
 
     override func awakeFromNib() {
@@ -92,21 +113,24 @@ final class MainPageViewController: UIViewController {
         super.viewDidLayoutSubviews()
         topCard?.frame = deckView.bounds
         portfoliosCollection.frame = deckView.bounds
+        ideasTable.frame = deckView.bounds
+        applyCurrentInsetsForIdeas()
     }
 
     deinit { likesListener?.remove() }
 
     // MARK: - IBActions
     @IBAction private func segmentedChanged(_ sender: UISegmentedControl) {
-        print("🔀 segmentedChanged → index:", sender.selectedSegmentIndex)
-        // Collapse any open rows when switching tabs
         expandedIndexPaths.removeAll()
-
         applyFilter()
         layoutDeck()
         presentNextCardIfNeeded()
         refreshPortfoliosList()
         updateVisibleContainer()
+        updateIdeasEmptyState()
+
+        // Lazy fetch on first open
+        if sender.selectedSegmentIndex == 2 && ideas.isEmpty { loadIdeasFromAPI() }
     }
 
     @IBAction private func didTapDislike(_ sender: UIButton) {
@@ -126,6 +150,13 @@ final class MainPageViewController: UIViewController {
 
     // MARK: - Helpers
     private func currentTopUserId() -> String? { queue.first?.userId }
+    
+    // Pull-to-refresh handler for the Ideas list
+    @objc private func refreshIdeas() {
+        print("🔄 Pull-to-refresh triggered")
+        loadIdeasFromAPI()   // this will endRefreshing() in its defer block
+    }
+
 
     // MARK: - Firestore fetch (users list)
     private func fetchUsersFromFirestore() {
@@ -227,11 +258,11 @@ final class MainPageViewController: UIViewController {
     // MARK: - Deck management
     private func layoutDeck() {
         guard segmentedControl.selectedSegmentIndex == 0 else {
-            deckView.subviews.forEach { if $0 !== portfoliosCollection { $0.removeFromSuperview() } }
+            deckView.subviews.forEach { if $0 !== portfoliosCollection && $0 !== ideasTable { $0.removeFromSuperview() } }
             topCard = nil
             return
         }
-        deckView.subviews.forEach { if $0 !== portfoliosCollection { $0.removeFromSuperview() } }
+        deckView.subviews.forEach { if $0 !== portfoliosCollection && $0 !== ideasTable { $0.removeFromSuperview() } }
         topCard = nil
 
         let count = min(queue.count, 2)
@@ -249,6 +280,7 @@ final class MainPageViewController: UIViewController {
             }
         }
         deckView.bringSubviewToFront(portfoliosCollection)
+        deckView.bringSubviewToFront(ideasTable) // keep above deck when shown
     }
 
     private func presentNextCardIfNeeded() {
@@ -352,13 +384,127 @@ final class MainPageViewController: UIViewController {
         let showEmpty = showPortfolios && likedUsersVMs.isEmpty
         portfoliosCollection.backgroundView?.isHidden = !showEmpty
     }
+    
+    private func applyCurrentInsetsForIdeas() {
+        // Base spacing between cards and edges
+        let baseTop: CGFloat = 12
+        let baseBottom: CGFloat = 12
+        // Respect safe areas
+        let safeBottom = view.safeAreaInsets.bottom
+
+        // If deckView is constrained above the like/dislike area, we still ensure
+        // the table scroll indicators reach the tab bar
+        ideasTable.contentInset = UIEdgeInsets(top: baseTop, left: 0, bottom: baseBottom + safeBottom, right: 0)
+        ideasTable.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: safeBottom, right: 0)
+    }
+
+    // =======================
+    // MARK: - IDEAS (new)
+    // =======================
+    private func buildIdeasTable() {
+        ideasTable = UITableView(frame: deckView.bounds, style: .plain)
+        ideasTable.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        ideasTable.backgroundColor = .clear
+        ideasTable.separatorStyle = .none
+        ideasTable.estimatedRowHeight = 160
+        ideasTable.rowHeight = UITableView.automaticDimension
+        ideasTable.alwaysBounceVertical = true
+        ideasTable.isHidden = true
+
+        // pull-to-refresh
+        ideasRefresh.attributedTitle = NSAttributedString(string: "Refreshing ideas…")
+        ideasRefresh.addTarget(self, action: #selector(refreshIdeas), for: .valueChanged)
+        ideasTable.refreshControl = ideasRefresh
+
+        ideasTable.dataSource = self
+        ideasTable.delegate = self
+        ideasTable.register(IdeaArticleCell.self, forCellReuseIdentifier: IdeaArticleCell.reuseID)
+
+        // Empty background
+        let bg = UIView(frame: deckView.bounds)
+        bg.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        bg.addSubview(ideasEmptyLabel)
+        NSLayoutConstraint.activate([
+            ideasEmptyLabel.centerXAnchor.constraint(equalTo: bg.centerXAnchor),
+            ideasEmptyLabel.centerYAnchor.constraint(equalTo: bg.centerYAnchor),
+            ideasEmptyLabel.leadingAnchor.constraint(greaterThanOrEqualTo: bg.leadingAnchor, constant: 24),
+            ideasEmptyLabel.trailingAnchor.constraint(lessThanOrEqualTo: bg.trailingAnchor, constant: -24)
+        ])
+        ideasTable.backgroundView = bg
+
+        deckView.addSubview(ideasTable)
+        deckView.sendSubviewToBack(ideasTable)
+
+        // initial insets
+        applyCurrentInsetsForIdeas()
+    }
+    
+    // =======================
+    // MARK: - IDEAS (Networking)
+    // =======================
+    private func loadIdeasFromAPI() {
+        Task { [weak self] in
+            guard let self = self else { return }
+            defer {
+                if self.ideasRefresh.isRefreshing { self.ideasRefresh.endRefreshing() }
+            }
+            do {
+                let items = try await ideaService.fetchFrontPage()
+                print("📚 Ideas loaded (api): \(items.count) items")
+                self.ideas = items
+                self.ideasTable.reloadData()
+                self.updateIdeasEmptyState()
+            } catch {
+                print("❌ Ideas API error:", error.localizedDescription)
+                if self.ideas.isEmpty {
+                    self.ideas = IdeaArticle.fakeData()
+                    print("↩️ Fallback to fake ideas: \(self.ideas.count)")
+                    self.ideasTable.reloadData()
+                    self.updateIdeasEmptyState()
+                }
+            }
+        }
+    }
+
+    private func updateIdeasEmptyState() {
+        let showIdeas = segmentedControl.selectedSegmentIndex == 2
+        ideasTable.backgroundView?.isHidden = !(showIdeas && ideas.isEmpty)
+    }
+
+    private func loadFakeIdeas() {
+        ideas = IdeaArticle.fakeData()
+        print("📚 Ideas loaded (fake): \(ideas.count) items")
+        ideasTable.reloadData()
+        updateIdeasEmptyState()
+    }
 
     private func updateVisibleContainer() {
         let showPortfolios = segmentedControl.selectedSegmentIndex == 1
+        let showIdeas = segmentedControl.selectedSegmentIndex == 2
+
         portfoliosCollection.isHidden = !showPortfolios
-        dislikeButton.isHidden = showPortfolios
-        likeButton.isHidden = showPortfolios
+        ideasTable.isHidden = !showIdeas
+
+        let showDeckControls = (segmentedControl.selectedSegmentIndex == 0)
+        dislikeButton.isHidden = !showDeckControls
+        likeButton.isHidden = !showDeckControls
+
+        // If we have the bottom constraint outlet, collapse/restore the bottom space.
+        if let bottom = deckViewBottomConstraint {
+            if showDeckControls {
+                // restore original gap (for the swipe buttons)
+                bottom.constant = originalDeckBottomConstant ?? bottom.constant
+            } else {
+                // fill to safe-area bottom (no gap for hidden buttons)
+                bottom.constant = 0
+            }
+            UIView.performWithoutAnimation {
+                self.view.layoutIfNeeded()
+            }
+        }
+
         updateEmptyState()
+        applyCurrentInsetsForIdeas()
     }
 
     // MARK: - Likes probes
@@ -397,8 +543,6 @@ final class MainPageViewController: UIViewController {
     }
 
     // MARK: - Match / Chat helpers
-
-    /// Returns true if *both* users have liked each other.
     private func isMutualLike(otherUid: String, completion: @escaping (Bool) -> Void) {
         guard let me = Auth.auth().currentUser?.uid else { completion(false); return }
         db.collection("users").document(otherUid)
@@ -412,7 +556,6 @@ final class MainPageViewController: UIViewController {
             }
     }
 
-    /// Create (or reuse) a 1:1 chat with `otherUid` and push ChatViewController.
     private func openOrCreateChat(with otherUid: String) {
         ensureChat(with: otherUid) { [weak self] chatId in
             guard let self = self, let chatId = chatId else { return }
@@ -429,7 +572,6 @@ final class MainPageViewController: UIViewController {
         }
     }
 
-    /// Ensures a 1:1 chat exists; returns the chatId.
     private func ensureChat(with otherUid: String, completion: @escaping (String?) -> Void) {
         guard let me = Auth.auth().currentUser?.uid else { completion(nil); return }
         
@@ -449,7 +591,6 @@ final class MainPageViewController: UIViewController {
                     return
                 }
                 
-                // Create a new chat if none exists
                 let doc = self.db.collection("chats").document()
                 let payload: [String: Any] = [
                     "participants": [me, otherUid],
@@ -468,7 +609,7 @@ final class MainPageViewController: UIViewController {
     }
 }
 
-/// MARK: - Data Source
+/// MARK: - Data Source (PORTFOLIOS)
 extension MainPageViewController: UICollectionViewDataSource {
     func collectionView(_ cv: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         likedUsersVMs.count
@@ -491,7 +632,6 @@ extension MainPageViewController: UICollectionViewDataSource {
             let items = portfolioCache[vm.userId] ?? []
             cell.configureExpanded(collapsedVM, portfolios: items)
 
-            // Toggle "Message" button based on mutual-like state
             isMutualLike(otherUid: vm.userId) { isMatch in
                 DispatchQueue.main.async { cell.setMatch(isMatched: isMatch) }
             }
@@ -500,12 +640,10 @@ extension MainPageViewController: UICollectionViewDataSource {
             cell.setMatch(isMatched: false)
         }
 
-        // Open website
         cell.onWebsiteTap = { url in
             if UIApplication.shared.canOpenURL(url) { UIApplication.shared.open(url) }
         }
 
-        // Tap on a portfolio project → present large detail sheet (animated in ProjectDetailVC)
         cell.onProjectTap = { [weak self] item in
             guard let self = self else { return }
             let vc = ProjectDetailViewController(item: item)
@@ -517,7 +655,6 @@ extension MainPageViewController: UICollectionViewDataSource {
             self.present(vc, animated: true)
         }
 
-        // "Message" button → ensure chat and push ChatViewController
         cell.onMessageTap = { [weak self] in
             self?.openOrCreateChat(with: vm.userId)
         }
@@ -526,19 +663,17 @@ extension MainPageViewController: UICollectionViewDataSource {
     }
 }
 
-// MARK: - Delegate + dynamic sizing
+// MARK: - Delegate + dynamic sizing (PORTFOLIOS)
 extension MainPageViewController: UICollectionViewDelegateFlowLayout {
 
     func collectionView(_ cv: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let vm = likedUsersVMs[indexPath.item]
         if expandedIndexPaths.contains(indexPath) {
-            // Collapse
             expandedIndexPaths.remove(indexPath)
             cv.performBatchUpdates({
                 cv.reloadItems(at: [indexPath])
             }, completion: nil)
         } else {
-            // Expand: fetch portfolios if needed, then reload
             fetchPortfoliosOnce(for: vm.userId) { [weak self] _ in
                 guard let self = self else { return }
                 self.expandedIndexPaths.insert(indexPath)
@@ -550,7 +685,6 @@ extension MainPageViewController: UICollectionViewDelegateFlowLayout {
     }
 
     func collectionView(_ cv: UICollectionView, layout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        // Stable heights to avoid deformation
         let width = cv.bounds.width
         let height: CGFloat = expandedIndexPaths.contains(indexPath) ? 380 : 92
         return CGSize(width: width, height: height)
@@ -562,5 +696,31 @@ extension MainPageViewController: UICollectionViewDelegateFlowLayout {
 
     func collectionView(_ cv: UICollectionView, layout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         12
+    }
+}
+
+// =======================
+// MARK: - IDEAS TABLE DS/DELEGATE
+// =======================
+extension MainPageViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return ideas.count
+    }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: IdeaArticleCell.reuseID, for: indexPath) as! IdeaArticleCell
+        cell.configure(with: ideas[indexPath.row])
+        return cell
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let idea = ideas[indexPath.row]
+        print("👉 Idea tapped: \(idea.title)")
+        let vc = IdeaDetailViewController(article: idea)
+        vc.modalPresentationStyle = .pageSheet
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(vc, animated: true)
     }
 }

@@ -4,49 +4,52 @@
 //
 //  Created by Ramiro Flores Villarreal on 10/11/25.
 //
-//  Renders a portfolio "card" for the profile grid.
-//  Works with ProfileViewController's registration & reuseID.
+//  Description:
+//  Reusable UICollectionViewCell representing a portfolio "card" inside the
+//  user’s profile. Displays title, role/date, and key skills.
 //
 
 import UIKit
 
 final class PortfolioCardCell: UICollectionViewCell {
 
-    // Expose a reuseID so ProfileViewController can register + dequeue
+    // MARK: - Reuse Identifier
     static let reuseID = "PortfolioCardCell"
 
-    // UI
+    // MARK: - UI Elements
     private let card = UIView()
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let footerLabel = UILabel()
 
+    // MARK: - Initializers
     override init(frame: CGRect) {
         super.init(frame: frame)
-        build()
+        setupView()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        build()
+        setupView()
     }
 
-    private func build() {
-        // Card styling (rounded rectangle like your mockups)
+    // MARK: - Setup
+    /// Configures the cell’s layout and visual style.
+    private func setupView() {
         contentView.backgroundColor = .clear
 
+        // Card styling
         card.translatesAutoresizingMaskIntoConstraints = false
         card.backgroundColor = UIColor(named: "BrandSecondary") ?? .secondarySystemBackground
         card.layer.cornerRadius = 16
         card.layer.masksToBounds = true
-        card.layer.borderWidth = 0.0
         contentView.addSubview(card)
 
         // Labels
         titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         titleLabel.numberOfLines = 2
 
-        subtitleLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        subtitleLabel.font = .systemFont(ofSize: 14)
         subtitleLabel.textColor = .secondaryLabel
         subtitleLabel.numberOfLines = 1
 
@@ -54,12 +57,13 @@ final class PortfolioCardCell: UICollectionViewCell {
         footerLabel.textColor = .tertiaryLabel
         footerLabel.numberOfLines = 1
 
+        // Add labels to card
         [titleLabel, subtitleLabel, footerLabel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             card.addSubview($0)
         }
 
-        // Layout
+        // Layout constraints
         NSLayoutConstraint.activate([
             card.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             card.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
@@ -80,35 +84,38 @@ final class PortfolioCardCell: UICollectionViewCell {
         ])
     }
 
-    // Public configure
+    // MARK: - Configuration
+    /// Populates the cell with a given `PortfolioItem`'s data.
     func configure(with item: PortfolioItem) {
         titleLabel.text = item.title.isEmpty ? "Untitled Project" : item.title
 
-        // e.g., "Art Director · Mar 2023 – Sep 2024"
+        // Combine role and date range
         let roleText = item.role.isEmpty ? nil : item.role
         let dateText = Self.makeDateRange(start: item.startDate, end: item.endDate)
         subtitleLabel.text = [roleText, dateText].compactMap { $0 }.joined(separator: " · ")
 
-        // Optional footer: show first 1–2 skills
+        // Footer preview — show first two skills
         if item.skills.isEmpty {
             footerLabel.text = nil
         } else {
-            let preview = item.skills.prefix(2).joined(separator: " • ")
-            footerLabel.text = preview
+            footerLabel.text = item.skills.prefix(2).joined(separator: " • ")
         }
     }
 
+    // MARK: - Date Formatting Helper
+    /// Returns a formatted date range (e.g., “Mar 2023 – Sep 2024”).
     private static func makeDateRange(start: Date?, end: Date?) -> String? {
         guard start != nil || end != nil else { return nil }
-        let f = DateFormatter()
-        f.dateFormat = "MMM yyyy"
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yyyy"
+
         switch (start, end) {
         case let (s?, e?):
-            return "\(f.string(from: s)) – \(f.string(from: e))"
+            return "\(formatter.string(from: s)) – \(formatter.string(from: e))"
         case let (s?, nil):
-            return "\(f.string(from: s)) – Present"
+            return "\(formatter.string(from: s)) – Present"
         case let (nil, e?):
-            return "Until \(f.string(from: e))"
+            return "Until \(formatter.string(from: e))"
         default:
             return nil
         }
