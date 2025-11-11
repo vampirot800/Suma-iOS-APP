@@ -78,6 +78,19 @@ final class MainPageViewController: UIViewController {
         return l
     }()
 
+    // --- NEW: simple filter state + header button for Ideas ---
+    private var currentIdeaKeywords: [String] = []
+    private let ideasFilterButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("Filter", for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        b.contentEdgeInsets = UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)
+        b.layer.cornerRadius = 12
+        b.backgroundColor = UIColor(named: "Header") ?? .systemGreen
+        b.setTitleColor(.white, for: .normal)
+        return b
+    }()
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -432,6 +445,18 @@ final class MainPageViewController: UIViewController {
         ])
         ideasTable.backgroundView = bg
 
+        // --- NEW: add a simple header with "Filter" button (works even when nav bar is hidden) ---
+        let header = UIView(frame: CGRect(x: 0, y: 0, width: deckView.bounds.width, height: 56))
+        header.autoresizingMask = [.flexibleWidth]
+        ideasFilterButton.addTarget(self, action: #selector(didTapIdeasFilter), for: .touchUpInside)
+        ideasFilterButton.translatesAutoresizingMaskIntoConstraints = false
+        header.addSubview(ideasFilterButton)
+        NSLayoutConstraint.activate([
+            ideasFilterButton.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 16),
+            ideasFilterButton.centerYAnchor.constraint(equalTo: header.centerYAnchor),
+        ])
+        ideasTable.tableHeaderView = header
+
         deckView.addSubview(ideasTable)
         deckView.sendSubviewToBack(ideasTable)
 
@@ -606,6 +631,69 @@ final class MainPageViewController: UIViewController {
                     }
                 }
             }
+    }
+
+    // --- NEW: Prompt for filter terms & fetch filtered results ---
+    @objc private func didTapIdeasFilter() {
+        let ac = UIAlertController(
+            title: "Filter Ideas",
+            message: "Enter comma-separated terms (e.g., business, cars, AI)",
+            preferredStyle: .alert
+        )
+        ac.addTextField { tf in
+            tf.placeholder = "business, cars, AI"
+            tf.autocapitalizationType = .none
+            tf.autocorrectionType = .no
+            tf.text = self.currentIdeaKeywords.joined(separator: ", ")
+        }
+        ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        ac.addAction(UIAlertAction(title: "Apply", style: .default, handler: { _ in
+            let raw = ac.textFields?.first?.text ?? ""
+            self.currentIdeaKeywords = raw
+                .split(separator: ",")
+                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+
+            print("🔎 Ideas filter set →", self.currentIdeaKeywords)
+            self.loadIdeasWithCurrentFilters()
+        }))
+        present(ac, animated: true)
+    }
+
+    /// Fetches ideas honoring `currentIdeaKeywords` (uses OR-joined query string).
+    private func loadIdeasWithCurrentFilters() {
+        Task { [weak self] in
+            guard let self = self else { return }
+            self.ideasRefresh.beginRefreshing()
+            defer {
+                if self.ideasRefresh.isRefreshing { self.ideasRefresh.endRefreshing() }
+            }
+
+            do {
+                let items: [IdeaArticle]
+                if self.currentIdeaKeywords.isEmpty {
+                    items = try await self.ideaService.fetchFrontPage()
+                } else {
+                    // Combine keywords into a single query (e.g., "business OR cars OR AI")
+                    let q = self.currentIdeaKeywords
+                        .map { $0.replacingOccurrences(of: "\"", with: "") }
+                        .joined(separator: " OR ")
+                    items = try await self.ideaService.search(query: q)
+                }
+                print("📚 Ideas loaded (filtered=\(self.currentIdeaKeywords)) → \(items.count) items")
+                self.ideas = items
+                self.ideasTable.reloadData()
+                self.updateIdeasEmptyState()
+            } catch {
+                print("❌ Ideas filtered API error:", error.localizedDescription)
+                if self.ideas.isEmpty {
+                    self.ideas = IdeaArticle.fakeData()
+                    print("↩️ Fallback to fake ideas: \(self.ideas.count)")
+                    self.ideasTable.reloadData()
+                    self.updateIdeasEmptyState()
+                }
+            }
+        }
     }
 }
 

@@ -84,7 +84,7 @@ final class LikedUserCell: UICollectionViewCell {
 
         // Card container
         card.translatesAutoresizingMaskIntoConstraints = false
-        card.backgroundColor = UIColor(named: "Background2")
+        card.backgroundColor = UIColor(named: "Accent2")
         card.layer.cornerRadius = 16
         card.layer.shadowColor = UIColor.black.withAlphaComponent(0.10).cgColor
         card.layer.shadowOpacity = 1
