@@ -431,36 +431,37 @@
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="separatorColor" name="Background2"/>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="default" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="ChatCardCell" id="dJt-ND-91E" customClass="ChatCardCell" customModule="FIT3178_App" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="50" width="345" height="52"/>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" selectionStyle="default" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="ChatCardCell" rowHeight="90" id="dJt-ND-91E" customClass="ChatCardCell" customModule="FIT3178_App" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="50" width="345" height="90"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="dJt-ND-91E" id="ShT-Xj-rjd">
-                                            <rect key="frame" x="0.0" y="0.0" width="345" height="52"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="345" height="90"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="1F8-7b-BEj" customClass="Card">
-                                                    <rect key="frame" x="16" y="8" width="313" height="36"/>
+                                                    <rect key="frame" x="16" y="8" width="313" height="74"/>
                                                     <subviews>
-                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Username" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4i4-S3-B2c">
-                                                            <rect key="frame" x="8" y="0.0" width="297" height="21"/>
-                                                            <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="17"/>
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Username" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4i4-S3-B2c">
+                                                            <rect key="frame" x="12" y="12.000000000000002" width="289" height="20.666666666666671"/>
+                                                            <fontDescription key="fontDescription" name="Inter-Bold" family="Inter" pointSize="17"/>
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
-                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Snippet" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QTw-ut-6mm">
-                                                            <rect key="frame" x="8" y="15" width="297" height="21"/>
-                                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                            <nil key="textColor"/>
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Snippet" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QTw-ut-6mm">
+                                                            <rect key="frame" x="12" y="42.666666666666664" width="289" height="19.333333333333336"/>
+                                                            <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                                                            <color key="textColor" name="Surface"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
                                                     </subviews>
-                                                    <color key="backgroundColor" name="BrandPrimary"/>
+                                                    <color key="backgroundColor" name="Accent2"/>
                                                     <constraints>
-                                                        <constraint firstAttribute="trailing" secondItem="4i4-S3-B2c" secondAttribute="trailing" constant="8" id="1P7-mw-CVY"/>
-                                                        <constraint firstItem="4i4-S3-B2c" firstAttribute="leading" secondItem="1F8-7b-BEj" secondAttribute="leading" constant="8" id="MPj-hL-gnC"/>
-                                                        <constraint firstItem="QTw-ut-6mm" firstAttribute="leading" secondItem="1F8-7b-BEj" secondAttribute="leading" constant="8" id="pQn-FT-hu8"/>
-                                                        <constraint firstAttribute="trailing" secondItem="QTw-ut-6mm" secondAttribute="trailing" constant="8" id="rey-mb-A6E"/>
-                                                        <constraint firstItem="QTw-ut-6mm" firstAttribute="top" secondItem="4i4-S3-B2c" secondAttribute="bottom" constant="8" id="yEH-Nv-ttn"/>
+                                                        <constraint firstAttribute="bottom" secondItem="QTw-ut-6mm" secondAttribute="bottom" constant="12" id="0Z8-Mf-zkJ"/>
+                                                        <constraint firstItem="QTw-ut-6mm" firstAttribute="leading" secondItem="1F8-7b-BEj" secondAttribute="leading" constant="12" id="KQM-FU-m96"/>
+                                                        <constraint firstAttribute="trailing" secondItem="QTw-ut-6mm" secondAttribute="trailing" constant="12" id="LXB-sX-j7V"/>
+                                                        <constraint firstItem="4i4-S3-B2c" firstAttribute="top" secondItem="1F8-7b-BEj" secondAttribute="top" constant="12" id="RKo-b6-dgt"/>
+                                                        <constraint firstItem="4i4-S3-B2c" firstAttribute="leading" secondItem="1F8-7b-BEj" secondAttribute="leading" constant="12" id="jAn-wx-cpn"/>
+                                                        <constraint firstAttribute="trailing" secondItem="4i4-S3-B2c" secondAttribute="trailing" constant="12" id="oUb-lR-t8t"/>
                                                     </constraints>
                                                     <userDefinedRuntimeAttributes>
                                                         <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
@@ -512,7 +513,7 @@
                                         <buttonConfiguration key="configuration" style="plain" title="New Chat"/>
                                     </button>
                                 </subviews>
-                                <color key="backgroundColor" name="BrandSecondary"/>
+                                <color key="backgroundColor" name="BrandPrimary"/>
                                 <constraints>
                                     <constraint firstItem="mb2-le-PRQ" firstAttribute="leading" secondItem="q7R-oQ-zMy" secondAttribute="leading" constant="8" id="7c7-xA-q5Y"/>
                                     <constraint firstItem="Jzh-BF-lx7" firstAttribute="top" secondItem="B9f-pQ-FJo" secondAttribute="bottom" constant="10" id="9yI-7y-D7C"/>
@@ -556,7 +557,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="37j-TP-Y5E" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3335" y="375"/>
+            <point key="canvasLocation" x="3333.5877862595416" y="374.64788732394368"/>
         </scene>
         <!--Login View Controller-->
         <scene sceneID="gSX-YE-yca">
@@ -842,9 +843,9 @@
                                     <constraint firstAttribute="height" constant="31" id="eY6-hr-nRe"/>
                                 </constraints>
                                 <segments>
-                                    <segment title="For You"/>
+                                    <segment title="Partner Up"/>
                                     <segment title="Portfolios"/>
-                                    <segment title="Ideas"/>
+                                    <segment title="Trends"/>
                                 </segments>
                                 <color key="tintColor" name="Surface"/>
                                 <color key="selectedSegmentTintColor" name="Background"/>
@@ -20216,6 +20217,9 @@ AAAAAAAABAEAAAAAAAAAWgAAAAAAAAAAAAAAAAADYYw
         <image name="person.fill" catalog="system" width="128" height="120"/>
         <image name="tray.fill" catalog="system" width="128" height="88"/>
         <image name="welcome" width="1550" height="1305"/>
+        <namedColor name="Accent2">
+            <color red="0.81599998474121094" green="0.875" blue="0.83499997854232788" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <namedColor name="Background">
             <color red="0.97299998998641968" green="0.97299998998641968" blue="0.97299998998641968" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
